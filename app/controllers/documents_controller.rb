@@ -1,5 +1,5 @@
 class DocumentsController < ApplicationController
-  before_action :set_document, only: %i[ show edit update destroy ]
+  before_action :set_document, only: %i[ show update destroy ]
 
   # GET /documents or /documents.json
   def index
@@ -13,10 +13,6 @@ class DocumentsController < ApplicationController
   # GET /documents/new
   def new
     @document = Document.new
-  end
-
-  # GET /documents/1/edit
-  def edit
   end
 
   # POST /documents or /documents.json
@@ -65,6 +61,6 @@ class DocumentsController < ApplicationController
 
     # Only allow a list of trusted parameters through.
     def document_params
-      params.expect(document: [ :title, :content ])
+      params.expect(document: [ :title ])
     end
 end

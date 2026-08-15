@@ -1,0 +1,219 @@
+
+<!DOCTYPE html>
+<html>
+  <head>
+    <title><%= content_for(:title) || "Lurch Server" %></title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="application-name" content="Lurch Server">
+    <meta name="mobile-web-app-capable" content="yes">
+    <%= csrf_meta_tags %>
+    <%= csp_meta_tag %>
+
+    <%= yield :head %>
+
+    <%# Enable PWA manifest for installable apps (make sure to enable in config/routes.rb too!) %>
+    <%#= tag.link rel: "manifest", href: pwa_manifest_path(format: :json) %>
+
+    <link rel="icon" href="/icon.png" type="image/png">
+    <link rel="icon" href="/icon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="/icon.png">
+
+    <%# Includes all stylesheet files in app/assets/stylesheets %>
+    <%= stylesheet_link_tag :app, "data-turbo-track": "reload" %>
+    <%= javascript_include_tag "application", "data-turbo-track": "reload", type: "module" %>
+  </head>
+
+  <body class="m-0 text-[#333] font-sans">
+    <header class="sticky top-0 z-50 flex items-center justify-between gap-6 border-b border-topbar-border bg-topbar-bg px-6 py-3 backdrop-blur">
+      <a class="flex items-center" href="/" aria-label="Lurch Plus home">
+        <%= image_tag "lurchlogo.png", alt: "Lurch Plus", class: "h-9 w-auto" %>
+      </a>
+      <nav class="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm font-medium" aria-label="Landing page navigation">
+        <a class="text-[#444] hover:text-accent" href="https://about.lurch.plus/getting-started">Get Started</a>
+        <a class="text-[#444] hover:text-accent" href="https://about.lurch.plus/learn/proofs/" target="lurchproofs">Learn Proofs</a>
+        <a class="text-[#444] hover:text-accent" href="https://about.lurch.plus/practice/">Practice</a>
+        <a class="text-[#444] hover:text-accent" href="https://about.lurch.plus/teaching/">Teach</a>
+        <a class="text-[#444] hover:text-accent" href="https://about.lurch.plus/theory/">Theory</a>
+        <a class="text-[#444] hover:text-accent" href="https://about.lurch.plus/resources/">Resources</a>
+      </nav>
+    </header>
+
+    <main id="landing-content">
+      <div class="bg-gradient-to-b from-hero-blue to-hero-white px-6 pb-16 pt-14">
+        <div class="mx-auto mb-8 max-w-4xl pb-8 text-center">
+          <h1 class="m-0 text-4xl font-bold sm:text-5xl">Proof Verification with Lurch Plus</h1>
+          <h2 class="mt-4 text-xl font-normal text-[#444]">Building the bridge to higher mathematics</h2>
+        </div>
+        <div class="mx-auto flex max-w-6xl flex-col items-center gap-10 lg:flex-row lg:items-start">
+          <div class="flex w-full flex-col lg:w-1/2">
+            <div class="mx-auto my-10 w-full max-w-md text-center sm:w-1/2">
+              <p class="font-serif italic">Is my proof correct?<br>
+                Lurch says it is not convinced.<br>
+                I need to say more.</p>
+              <p class="mt-1 text-right text-sm not-italic">Anonymous, 2024</p>
+            </div>
+            <p class="mt-3 text-lg">Welcome to the home of Lurch — an open source math editor that
+              can check your proofs!</p>
+            <ul class="mt-3 list-disc space-y-1 pl-6 text-lg text-[peru]" id="topfeatures">
+              <li>Natural mathematical style and notation</li>
+              <li>Completely customizable</li>
+              <li>Designed from the ground up for ease of use</li>
+            </ul>
+            <div class="mt-6">
+              <p><a href="student.html?load=help/welcome.lurch" class="inline-flex min-h-[2.6rem] items-center justify-center rounded-md border border-accent bg-accent px-4 py-2 font-bold text-white no-underline hover:bg-accent-hover" target="_blank">Try Lurch</a></p>
+            </div>
+          </div>
+          <div class="w-full lg:w-1/2">
+            <%= video_tag "splash.mp4", autoplay: true, muted: true, loop: true, playsinline: true, class: "w-full rounded-xl shadow-[0_10px_30px_var(--color-media-shadow)]" %>
+          </div>
+        </div>
+      </div>
+
+      <!-- Gallery Section -->
+      <div id="examples" class="mx-auto max-w-6xl px-6 py-16">
+        <h2 class="text-center text-3xl font-bold">Example proof gallery</h2>
+        <p class="mx-auto mt-3 max-w-2xl text-center text-[#555]">These examples show different ways Lurch can support proof writing,
+          validation, contexts, and mathematical style.</p>
+        <div class="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <div class="flex flex-col rounded-xl border border-card-border bg-white p-5 shadow-[0_4px_14px_var(--color-card-shadow)] transition hover:-translate-y-1 hover:shadow-[0_10px_24px_var(--color-card-shadow)]">
+            <h3 class="m-0 text-lg font-semibold">Topo-logical</h3>
+            <p class="mt-2 flex-1 text-sm text-[#555]">A topology proof that the composition of continuous functions is
+              continuous.</p>
+            <p class="mt-3"><%= image_tag "home/topology-snippet.png", alt: "Topo-logical proof snippet", class: "w-full rounded-md border border-card-border" %></p>
+            <p class="mt-3"><a href="student.html?load=math/examples/Topo-logical%20-%20soln.lurch" class="inline-flex items-center gap-1 text-sm font-medium text-accent no-underline hover:underline" target="_blank" rel="noopener" aria-label="Open in Lurch (opens in new tab)">
+                <span>Open in Lurch</span>
+                <i class="fa-solid fa-arrow-up-right-from-square text-xs opacity-75" aria-hidden="true"></i> </a></p>
+          </div>
+          <div class="flex flex-col rounded-xl border border-card-border bg-white p-5 shadow-[0_4px_14px_var(--color-card-shadow)] transition hover:-translate-y-1 hover:shadow-[0_10px_24px_var(--color-card-shadow)]">
+            <h3 class="m-0 text-lg font-semibold">Double induction</h3>
+            <p class="mt-2 flex-1 text-sm text-[#555]">Verifying a binomial coefficient identity using double
+              induction.</p>
+            <p class="mt-3"><%= image_tag "home/double-snippet.png", alt: "Double induction proof snippet", class: "w-full rounded-md border border-card-border" %></p>
+            <p class="mt-3"><a href="student.html?load=math/examples/Mar%2026%20-%20in%20class.lurch" class="inline-flex items-center gap-1 text-sm font-medium text-accent no-underline hover:underline" target="_blank" rel="noopener" aria-label="Open in Lurch (opens in new tab)">
+                <span>Open in Lurch</span>
+                <i class="fa-solid fa-arrow-up-right-from-square text-xs opacity-75" aria-hidden="true"></i> </a></p>
+          </div>
+          <div class="flex flex-col rounded-xl border border-card-border bg-white p-5 shadow-[0_4px_14px_var(--color-card-shadow)] transition hover:-translate-y-1 hover:shadow-[0_10px_24px_var(--color-card-shadow)]">
+            <h3 class="m-0 text-lg font-semibold">Linear Algebra</h3>
+            <p class="mt-2 flex-1 text-sm text-[#555]">Three proofs involving linear transformations and subspaces.</p>
+            <p class="mt-3"><%= image_tag "home/linear-snippet.png", alt: "Linear algebra proof snippet", class: "w-full rounded-md border border-card-border" %></p>
+            <p class="mt-3"><a href="student.html?load=math/examples/Linear-Algebra-Examples.lurch" class="inline-flex items-center gap-1 text-sm font-medium text-accent no-underline hover:underline" target="_blank" rel="noopener" aria-label="Open in Lurch (opens in new tab)">
+                <span>Open in Lurch</span>
+                <i class="fa-solid fa-arrow-up-right-from-square text-xs opacity-75" aria-hidden="true"></i> </a></p>
+          </div>
+          <div class="flex flex-col rounded-xl border border-card-border bg-white p-5 shadow-[0_4px_14px_var(--color-card-shadow)] transition hover:-translate-y-1 hover:shadow-[0_10px_24px_var(--color-card-shadow)]">
+            <h3 class="m-0 text-lg font-semibold">Group Theory</h3>
+            <p class="mt-2 flex-1 text-sm text-[#555]">A group theory example using the linear algebra context and the
+              definition of a group.</p>
+            <p class="mt-3"><%= image_tag "home/group-snippet.png", alt: "Group theory proof snippet", class: "w-full rounded-md border border-card-border" %></p>
+            <p class="mt-3"><a href="student.html?load=math/examples/group-example.lurch" class="inline-flex items-center gap-1 text-sm font-medium text-accent no-underline hover:underline" target="_blank" rel="noopener" aria-label="Open in Lurch (opens in new tab)">
+                <span>Open in Lurch</span>
+                <i class="fa-solid fa-arrow-up-right-from-square text-xs opacity-75" aria-hidden="true"></i> </a></p>
+          </div>
+          <div class="flex flex-col rounded-xl border border-card-border bg-white p-5 shadow-[0_4px_14px_var(--color-card-shadow)] transition hover:-translate-y-1 hover:shadow-[0_10px_24px_var(--color-card-shadow)]">
+            <h3 class="m-0 text-lg font-semibold">Proof Style Sampler</h3>
+            <p class="mt-2 flex-1 text-sm text-[#555]">A collection of proofs using a variety of topics and styles.</p>
+            <p class="mt-3"><%= image_tag "home/styles-snippet.png", alt: "Proof style sampler snippet", class: "w-full rounded-md border border-card-border" %></p>
+            <p class="mt-3"><a href="student.html?load=help/example-proofs.lurch" class="inline-flex items-center gap-1 text-sm font-medium text-accent no-underline hover:underline" target="_blank" rel="noopener" aria-label="Open in Lurch (opens in new tab)">
+                <span>Open in Lurch</span>
+                <i class="fa-solid fa-arrow-up-right-from-square text-xs opacity-75" aria-hidden="true"></i> </a></p>
+          </div>
+        </div>
+        <p class="mt-10 text-center"><a href="practice/" class="inline-flex min-h-[2.6rem] items-center justify-center rounded-md border border-accent bg-accent px-4 py-2 font-bold text-white no-underline hover:bg-accent-hover">More example documents and assignments</a></p>
+      </div>
+
+      <!-- Course Section -->
+      <div id="learn" class="bg-soft-blue px-6 py-16">
+        <div class="mx-auto flex max-w-6xl flex-col items-center gap-10 md:flex-row">
+          <div class="w-full md:w-1/3">
+            <p><%= image_tag "home/sherlock.png", alt: "Sherlock Holmes", class: "mx-auto h-[205px] w-auto" %></p>
+          </div>
+          <div class="w-full md:w-2/3">
+            <h2 class="m-0 text-2xl font-bold">Introduction to Mathematical Proof</h2>
+            <p class="mt-3 text-[#444]">Lecture notes for an introductory undergraduate course on
+              mathematical proofs, integrated with Lurch and based on
+              super-natural deduction. The mathematical definitions used in the
+              course are available as Lurch contexts.</p>
+            <p class="mt-5 flex flex-wrap gap-3">
+              <a href="learn/proofs/" class="inline-flex min-h-[2.6rem] items-center justify-center rounded-md border border-accent bg-accent px-4 py-2 font-bold text-white no-underline hover:bg-accent-hover" target="lurchproofs">Learn about proofs</a>
+              <a href="learn/proofs/appendix/" class="inline-flex min-h-[2.6rem] items-center justify-center rounded-md border border-accent px-4 py-2 font-bold text-accent no-underline hover:bg-soft-blue-hover" target="lurchproofs">Browse the course contexts</a>
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Audience Section -->
+      <div id="audiences" class="mx-auto max-w-6xl px-6 py-16">
+        <h2 class="text-center text-3xl font-bold">Find what you need</h2>
+        <div class="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <div class="rounded-xl border border-card-border bg-white p-5 shadow-[0_4px_14px_var(--color-card-shadow)] transition hover:-translate-y-1 hover:shadow-[0_10px_24px_var(--color-card-shadow)]">
+            <h3 class="m-0 text-lg font-semibold">New to Lurch</h3>
+            <p class="mt-2 text-sm text-[#555]">Read the quick-start guides and start a new document in various
+              mathematical contexts.</p>
+            <p class="mt-3"><a href="getting-started/" class="text-sm font-medium text-accent no-underline hover:underline">Getting started with Lurch</a></p>
+          </div>
+          <div class="rounded-xl border border-card-border bg-white p-5 shadow-[0_4px_14px_var(--color-card-shadow)] transition hover:-translate-y-1 hover:shadow-[0_10px_24px_var(--color-card-shadow)]">
+            <h3 class="m-0 text-lg font-semibold">Students</h3>
+            <p class="mt-2 text-sm text-[#555]">Learn about mathematical proofs, then practice them in Lurch.</p>
+            <p class="mt-3 flex flex-col gap-1">
+              <a href="learn/proofs/" class="text-sm font-medium text-accent no-underline hover:underline" target="lurchproofs">Introduction to Proof</a>
+              <a href="practice" class="text-sm font-medium text-accent no-underline hover:underline">Practice Proofs with Lurch</a>
+            </p>
+          </div>
+          <div class="rounded-xl border border-card-border bg-white p-5 shadow-[0_4px_14px_var(--color-card-shadow)] transition hover:-translate-y-1 hover:shadow-[0_10px_24px_var(--color-card-shadow)]">
+            <h3 class="m-0 text-lg font-semibold">Instructors</h3>
+            <p class="mt-2 text-sm text-[#555]">Use Lurch in a course, adapt example assignments and mathematical
+              contexts, or create, distribute, and grade your own.</p>
+            <p class="mt-3"><a href="teaching/" class="text-sm font-medium text-accent no-underline hover:underline">Teaching with Lurch</a></p>
+          </div>
+          <div class="rounded-xl border border-card-border bg-white p-5 shadow-[0_4px_14px_var(--color-card-shadow)] transition hover:-translate-y-1 hover:shadow-[0_10px_24px_var(--color-card-shadow)]">
+            <h3 class="m-0 text-lg font-semibold">Design and Theory</h3>
+            <p class="mt-2 text-sm text-[#555]">How the Lurch proof assistant works its magic under the hood.</p>
+            <p class="mt-3"><a href="theory/" class="text-sm font-medium text-accent no-underline hover:underline">Lurch Design and Theory</a></p>
+          </div>
+          <div class="rounded-xl border border-card-border bg-white p-5 shadow-[0_4px_14px_var(--color-card-shadow)] transition hover:-translate-y-1 hover:shadow-[0_10px_24px_var(--color-card-shadow)]">
+            <h3 class="m-0 text-lg font-semibold">Additional Resources</h3>
+            <p class="mt-2 text-sm text-[#555]">Find additional documentation, project source code, talk slides,
+              and more.</p>
+            <p class="mt-3"><a href="resources/" class="text-sm font-medium text-accent no-underline hover:underline">Resources overview</a></p>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <div id="footer-block" class="border-t border-[#888] px-4 py-4 text-left leading-normal text-black">
+      <footer>
+        <div class="mx-auto max-w-6xl">
+          <div class="mt-3 flex flex-wrap items-center justify-between gap-2" id="more-contact-info">
+            <div>
+              Lurch editor by:
+              <h3 class="m-0 text-base font-bold">
+                <a class="text-accent" href="http://monks.scranton.edu/" target="_blank">Kenneth G. Monks</a>
+              </h3>
+              Department of Mathematics<br>
+              University of Scranton<br>
+              Scranton, PA 18510<br>
+              <a class="text-accent" href="mailto:monks@scranton.edu" target="_blank">monks@scranton.edu</a>
+            </div>
+            <div class="text-center" id="lurch-footer">
+              <span class="pr-1 font-bold text-[#4caf50]">✓</span>
+              <a class="text-accent" href="http://lurch.plus">lurch.plus</a><br>
+              Copyright © Kenneth G. Monks
+            </div>
+            <div class="text-right">
+              Server hosting by:
+              <h3 class="m-0 text-base font-bold">
+                <a class="text-accent" href="https://clontz.org/" target="_blank">Steven Clontz</a>
+              </h3>
+              Department of Mathematics<br>
+              University of South Alabama<br>
+              Mobile, AL 36688<br>
+              <a class="text-accent" href="mailto:steven.clontz@gmail.com" target="_blank">steven.clontz@gmail.com</a>
+            </div>
+          </div>
+        </div>
+      </footer>
+    </div>
+  </body>
+</html>

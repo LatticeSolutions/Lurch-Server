@@ -1,1 +1,18 @@
 @import "tailwindcss";
+
+@theme {
+  --color-theme: #428bca;
+  --color-accent: #025d8c;
+  --color-accent-hover: #014d74;
+  --color-nav-link: #5da9e9;
+  --color-nav-bg: #101b27;
+  --color-hero-blue: rgb(226 238 245 / 0.98);
+  --color-hero-white: rgb(255 255 255 / 0.9);
+  --color-soft-blue: #e8f2f7;
+  --color-soft-blue-hover: #def0ff;
+  --color-card-border: rgb(2 93 140 / 0.16);
+  --color-media-shadow: rgb(16 27 39 / 0.22);
+  --color-card-shadow: rgb(16 27 39 / 0.08);
+  --color-topbar-bg: rgb(255 255 255 / 0.94);
+  --color-topbar-border: rgb(0 0 0 / 0.08);
+}

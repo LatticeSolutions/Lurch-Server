@@ -24,22 +24,27 @@
     <%= javascript_include_tag "application", "data-turbo-track": "reload", type: "module" %>
   </head>
 
-  <body class="m-0 text-[#333] font-sans">
-    <header class="sticky top-0 z-50 flex items-center justify-between gap-6 border-b border-topbar-border bg-topbar-bg px-6 py-3 backdrop-blur">
-      <a class="flex items-center" href="/" aria-label="Lurch Plus home">
+  <body class="m-0 text-gray-700 font-sans min-h-screen bg-[linear-gradient(45deg,darkslategrey,transparent)]">
+    <header class="sticky top-0 z-50 flex items-center justify-between gap-6 border-b border-topbar-border bg-topbar-bg px-6 py-3 bg-white">
+      <%= link_to :root, class: "flex items-center", aria_label: "Lurch Plus home" do %>
         <%= image_tag "lurchlogo.png", alt: "Lurch Plus", class: "h-9 w-auto" %>
-      </a>
+      <% end %>
       <nav class="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm font-medium" aria-label="Landing page navigation">
-        <a class="text-[#444] hover:text-accent" href="https://about.lurch.plus/getting-started">Get Started</a>
-        <a class="text-[#444] hover:text-accent" href="https://about.lurch.plus/learn/proofs/" target="lurchproofs">Learn Proofs</a>
-        <a class="text-[#444] hover:text-accent" href="https://about.lurch.plus/practice/">Practice</a>
-        <a class="text-[#444] hover:text-accent" href="https://about.lurch.plus/teaching/">Teach</a>
-        <a class="text-[#444] hover:text-accent" href="https://about.lurch.plus/theory/">Theory</a>
-        <a class="text-[#444] hover:text-accent" href="https://about.lurch.plus/resources/">Resources</a>
+        <a class="text-gray-600 hover:text-accent" href="https://about.lurch.plus/getting-started">Get Started</a>
+        <a class="text-gray-600 hover:text-accent" href="https://about.lurch.plus/resources/">Resources</a>
+        <%= link_to "Documents", documents_path, class: "text-gray-600 hover:text-accent" %>
       </nav>
     </header>
     <main>
-      <%= yield %>
+      <% if content_for? :full_page_content %>
+        <div class="bg-white">
+          <%= yield(:full_page_content) %>
+        </div>
+      <% else %>
+        <div class="bg-white max-w-5xl p-4 m-auto">
+          <%= yield %>
+        </div>
+      <% end %>
     </main>
     <% if content_for? :footer %>
       <%= yield(:footer) %>

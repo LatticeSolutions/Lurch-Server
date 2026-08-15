@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html>
   <head>
@@ -23,9 +24,25 @@
     <%= javascript_include_tag "application", "data-turbo-track": "reload", type: "module" %>
   </head>
 
-  <body>
-    <main class="container mx-auto mt-28 px-5 flex">
+  <body class="m-0 text-[#333] font-sans">
+    <header class="sticky top-0 z-50 flex items-center justify-between gap-6 border-b border-topbar-border bg-topbar-bg px-6 py-3 backdrop-blur">
+      <a class="flex items-center" href="/" aria-label="Lurch Plus home">
+        <%= image_tag "lurchlogo.png", alt: "Lurch Plus", class: "h-9 w-auto" %>
+      </a>
+      <nav class="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm font-medium" aria-label="Landing page navigation">
+        <a class="text-[#444] hover:text-accent" href="https://about.lurch.plus/getting-started">Get Started</a>
+        <a class="text-[#444] hover:text-accent" href="https://about.lurch.plus/learn/proofs/" target="lurchproofs">Learn Proofs</a>
+        <a class="text-[#444] hover:text-accent" href="https://about.lurch.plus/practice/">Practice</a>
+        <a class="text-[#444] hover:text-accent" href="https://about.lurch.plus/teaching/">Teach</a>
+        <a class="text-[#444] hover:text-accent" href="https://about.lurch.plus/theory/">Theory</a>
+        <a class="text-[#444] hover:text-accent" href="https://about.lurch.plus/resources/">Resources</a>
+      </nav>
+    </header>
+    <main>
       <%= yield %>
     </main>
+    <% if content_for? :footer %>
+      <%= yield(:footer) %>
+    <% end %>
   </body>
 </html>

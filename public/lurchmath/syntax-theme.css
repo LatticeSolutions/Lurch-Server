@@ -1,0 +1,641 @@
+/*
+ * This file styles the contents of the TinyMCE editor iframe. Styling for the
+ * main app page (which contains the editor and other things as well) is in
+ * main-app-styles.css.
+ *
+ * The idea behind this theme is to use syntax highlighting to indicate the
+ * semantics of the document in semantic view, so that the text doesn't jiggle
+ * when switching between views. 
+ *
+ * Shell styling uses a shaded 'card' appearance. To replace that with a flatter
+ * left border style use leftborder-theme.css instead.
+ *
+ * To use this theme in your Lurch installation add, add this to the `editor`
+ * key in the options object sent to `createApp()` in your local `index.html`
+ * file.
+ *
+ *  `content_css : [ 'document', 'lurchmath/syntax-theme.css',
+ *  'https://unpkg.com/mathlive/dist/mathlive-static.css' ]`
+ *
+ *
+ *  Selector                                 Targets
+ *  ---------------------------------------------------------------
+ *  span.lurch-atom                          All inline atoms
+ *  [data-metadata_type*="expression"]       Expressions
+ *  [data-metadata_type*="expositorymath"]   Expository expressions
+ *
+ *  div.lurch-atom                           All shells
+ *  [data-metadata_type*="rule"]             Rules
+ *  [data-metadata_type*="theorem"]          Theorems
+ *  [data-metadata_type*="proof"]            Proofs
+ *  [data-metadata_type*="subproof"]         Subproofs
+ *  [data-metadata_type*="premise"]          Premises
+ *  [data-metadata_type*="recall"]           Recalls
+ *  [data-metadata_type*="preview"]          Previews
+ *  [data-metadata_type*="dependency"]       Dependencies
+ *
+ *  .unindented                              Unindented shells .atom-is-selected
+ *  Selected Atoms
+ *
+ *  We also define a 'Problem Box' to be a subproof shell at the top level of
+ *  the document.  It has selector:
+ *
+ *    [data-metadata_type*="subproof"]:not(div.lurch-atom div.lurch-atom) 
+ *
+ * We assume 96px/in and 6rem/in and set 1in margins and 6.5in text width, even
+ * though modern displays often exceed that (so you can use units of a fraction
+ * of a px if needed). So page width is 51 rem. 
+ *
+ * Scale: 1rem = 16px = 12pt = = 1/6in
+ */
+
+/* import the main fonts */
+@import url("https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,400;0,700;1,400;1,700&family=Roboto:ital,wght@0,400;0,700;1,400;1,700&display=swap");
+
+/* set css variables for easy customization */
+:root {
+  /* for \text mode in Math Live */
+  --_text-font-family: "Roboto", "Arial", Helvetica, sans-serif;
+  
+  /* colors */
+  
+  /* hovered atom background color */
+  --hover-color: #bbd6fb; /* rgb(187,214,251); #B9D9F2*/
+  /* semantic hovered atom background color */
+  --semantic-hover-color: #f2f8ff;/* blues:#f0f7ff; #ebf3ff; yellows: #fff9dc;  #fffce9; */
+  /* selected atom backround color */
+  --selected-color: #a1c6f5;
+  /* borders and titles of shells color */
+  --border-color: #b4d7ff;
+  /* marginal annotation of shell types */
+  --margin-color:  #b4d7ff; /* transparent; */
+  /* left border of shells in semantic view */
+  --left-border-color: #b4d7ff;
+  /* green checkmark color */
+  --check-color: #4caf50;
+  /* question mark feedback icon color */
+  --questionmark-color: #d8b400; /* or white if background used */
+  /* question mark feedback icon background color */
+  --questionmark-background-color: chocolate;
+  /* red X feedback icon color */
+  --x-color: red;
+  /* exclamation point error feedback icon color */
+  --error-color: red;
+  /* default shell background color */
+  --atom-color: white;
+  /* rule shell background color */
+  --rule-color: #e7f3fd;
+  /* premise shell background color */
+  --premise-color: #fff6e9;
+  /* theorem shell background color */
+  --theorem-color: #f5f5f5;
+  /* recall shell background color */
+  --recall-color: #efe9f1;
+  /* inline semantic math expression font color */
+  --math-color: #cd853f; /* turquoise #079aa3 golds #cd853f or #D8833B; */
+  /* inline semantic math expression font color */
+  --code-bg-color: #ecf0f1; /* matches TinyMCE light gray */
+  /* base font size */
+  /* inline semantic math expression font color */
+  --math-color: #cd853f; /* turquoise #079aa3 golds #cd853f or #D8833B; */
+
+  /* sizes */
+
+  /* base font size */
+  --base-font-size: 11pt;
+  /* subproof indentation */
+  --indentation: 0.75rem;
+  /* context box indentation */
+  --context-indentation: 1.25rem;
+  /* shell title offset */
+  --shell-title-offset: -90px;
+  /* shell title offset */
+  --shell-title-width: 90px;
+  /* shell title offset */
+  --shell-border-width: 1px;
+  /* paragraph top margins inside of unindented shells */
+  --p-gap: 0.75rem;
+  /* top margin for shells inside of other shells */
+  --nested-mar: 0.25rem;
+  /* top margin for shells inside of other shells */
+  --nested-pad: 0.25rem;
+  /* paragraph top margins inside of unindented shells */
+  --line-height: 1.2 /* 1.15; */
+}
+
+/***********************************************************************/
+/*                               Utilities                             */
+
+/* Add this class to hide any div. Useful for toggling. */
+.hidden { display: none;}
+
+/***********************************************************************/
+/*                                Fonts                                */
+
+/* set the base font */
+body,p,h1,h2,h3,h4,h5,h6,div,ul,ol,li {
+  font-family: "Roboto", "Arial", Helvetica, sans-serif;
+}
+/* Set the base font size.  This mainly affects word wrap. */
+body {
+  font-size: var(--base-font-size);
+}
+/* for some reason the math symbols are too small compared to the surrounding text 
+   so increase them here. */
+.ML__latex :not(.ML__text) {
+  font-size: 1.2 * var(--base-font-size);
+}
+
+/***********************************************************************/
+/*                               Spacing                               */
+
+body {
+  max-width: 51rem;
+  padding: 4rem 6rem 6rem 6rem;
+}
+
+/* toggle the borders for narrow views and presentations on a projector */
+body.presentation-mode {
+  box-sizing: border-box;
+  max-width: 51rem;
+  margin-inline: auto;
+  padding-inline: 1rem;
+  padding-block: 4rem 6rem;
+  /* font-size: 1.1rem; */
+}
+
+/* Paragraphs and Items */
+
+/* set the default gap between paragraphs and the line height in paragraphs */
+p {
+  margin-top: var(--p-gap);
+  line-height: var(--line-height);
+}
+/* remove left padding and margins for paragraphs and list items inside shells
+   as those are handled by the shells themselves */
+div.lurch-atom > p, div.lurch-atom li {
+    margin: 0;
+    padding: 0;
+    line-height: var(--line-height);
+}
+/* ...but inside an unindented-subproof shell separate paragraphs by a gap */
+.unindented p {
+  margin-top: var(--p-gap);
+}
+
+/* Inline Atoms */
+
+/* prevent inline atoms on consecutive lines from overlapping */
+span.lurch-atom {
+  display: inline-block;
+  /* margin-top: 0.2rem; */
+  /* background should not be transparent for hover */
+  /* background-color: var(--atom-color); */
+
+}
+
+/* Shells */
+
+/* default view of shells */
+div.lurch-atom {
+  position: relative;
+  /* leave room to toggle borders (TODO: consider outline) */
+  border-left: var(--shell-border-width) solid transparent;
+  border-bottom: var(--shell-border-width) solid transparent;
+  border-top: calc(0.5*var(--shell-border-width)) solid transparent;
+  border-right: calc(0.5*var(--shell-border-width)) solid transparent;
+  border-radius: 6pt;
+  /* For top level shells give them right padding and separate them by a p-gap  */
+  padding: 0.5rem var(--indentation);
+  margin: var(--p-gap) 0;
+  /* background should not be transparent for hovering effects */
+  background-color: var(--atom-color);
+}
+
+/* Proof Shells */
+
+/* typically don't need bottom margin or padding because of the qed symbol */
+div.lurch-atom[data-metadata_type*="proof"] { 
+  margin-bottom: 0; 
+  padding-bottom: 0.25rem; 
+}
+
+/* Problem boxes */
+
+/* Need a little extra padding at the top */
+[data-metadata_type*="subproof"]:not(div.lurch-atom div.lurch-atom) {
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+}
+
+/* Subproofs or Premises (not top level) */
+
+/* separate them by a smaller gap, a smaller top and bottom padding, and indent
+   them only on the left according to their nesting level. Right padding is 0 so
+   checkmarks align and for less wonky overlaps and shadows. */
+div.lurch-atom { 
+  [data-metadata_type*="subproof"] , 
+  [data-metadata_type*="premise"]  {
+    margin: var(--nested-mar) 0;
+    padding: var(--nested-pad) 0 var(--nested-pad) var(--indentation);
+  }
+}
+/* unless they are inside a .unindented shell, in which case don't indent them */
+div.lurch-atom.unindented {
+  [data-metadata_type*="subproof"] , 
+  [data-metadata_type*="premise"] {
+    padding-left: 0;
+  }
+}
+
+/* context box and its contents */
+
+/* context preview atoms */
+div.lurch-atom#context {
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2); /* Soft shadow for depth */
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+/* nested ones have no border or side padding */
+div.lurch-atom#context div.lurch-atom[data-metadata_type*="preview"] {
+  outline: none;
+  padding-left: 0;
+  padding-right: 0;
+  box-shadow: none;
+}
+/* nothing inside is user-selectable */
+div.lurch-atom#context * {
+  user-select: none;
+}
+/* don't flatten the gaps between paragraphs that are children of the context atom */
+/* also making the transition to using a class for preview css */
+div.lurch-atom#context div.lurch-atom.preview > div > p,
+div.lurch-atom#context div.lurch-atom.preview > p {
+  margin-top: var(--p-gap);
+  line-height: var(--line-height);
+}
+/* center the main title */
+h1#contextTitle {
+  text-align: center;
+}
+/* Remove the bottom margin from the filtered-heading */
+#filter-head h2 {
+  margin-bottom: 0;
+}
+.no-rules-found::after {
+  content: "No rules mention your search string.";
+  display: block;
+  margin-top: 0.7em;
+  color: gray;
+  font-style: italic;
+}
+/* declared constants table */
+div#declaresPanel {
+  background-color: floralwhite;
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+  padding: 1rem;
+  border-radius: 6px;
+}
+/* nothing inside is user-selectable */
+div#context-head {
+  margin: 0;
+  padding: 0;
+}
+
+
+/* Lists */
+
+/* top level numbered lists inside shells */
+div.lurch-atom ol {
+  padding: 0 0 0 1rem;
+  margin: 0;
+}
+/* nested numbered lists inside shells */
+div.lurch-atom ol ol {
+  padding: 0 0 0 0.5rem;
+}
+
+/* Shrink wrapped shells */
+
+/* The following is used for a 'display math' style rule where you just want
+  to assert a single formula, usually for a particular exercise, but not put it
+  in the context of the document. */
+[data-shell_title].shrink-wrap{
+  display: block;
+  width: fit-content;
+  margin-inline: auto;
+}
+
+
+/***********************************************************************/
+/*                           Semantic View                             */
+body.shell-style-boxed {
+
+  /* Inline atoms get math syntax color */
+  span.lurch-atom:not([data-metadata_type*="expositorymath"]) {
+    color: var(--math-color);
+  }
+
+  /* Shell styling */
+
+  /* Restore left padding for .unindented shells */
+  .unindented {
+    [data-metadata_type*="subproof"] , [data-metadata_type*="premise"] {
+      padding-left: var(--indentation);
+    }  
+  }
+  
+  /* Add the border and shadow to shells with titles (even subproofs) */
+  [data-shell_title] {
+    position: relative;
+    /* borders */
+    border-bottom: var(--shell-border-width) solid var(--left-border-color);
+    border-left: var(--shell-border-width) solid var(--left-border-color);
+    border-top: calc(0.5*var(--shell-border-width)) solid var(--left-border-color);
+    border-right: calc(0.5*var(--shell-border-width)) solid var(--left-border-color);
+    border-radius: 6pt;
+    box-shadow: -6pt 4pt 5pt -3pt var(--left-border-color);
+  }
+
+  /* Shell titles */
+
+  /* Add the shell title in the left margin for body.shell-labels (toggleable by users via context menu) */
+  &.shell-labels [data-shell_title]::before {
+    content: attr(data-shell_title);
+    color: var(--margin-color);
+    background-color: transparent;
+    font-family: "Anonymous Pro", "PT Mono", "Oxygen monospace", monospace;
+    font-size: smaller;
+    position: absolute;
+    top: 11px;
+    left: var(--shell-title-offset);
+    width: var(--shell-title-width);
+  }
+  /* If it is inside another shell */
+  &.shell-labels [data-shell_title] [data-shell_title]::before {
+    left: calc(var(--shell-title-offset) - var(--indentation) - var(--shell-border-width));
+    width: calc(var(--shell-title-width) + var(--indentation) + var(--shell-border-width));
+  }
+  /* If it is inside the context */
+  &.shell-labels #context [data-shell_title]::before {
+    left: calc(var(--shell-title-offset) - var(--context-indentation) - var(--shell-border-width));
+    width: calc(var(--shell-title-width) + var(--context-indentation + var(--shell-border-width)));
+  }
+  /* If it is inside a shell inside the context */
+  &.shell-labels #context [data-shell_title] [data-shell_title]::before {
+    left: calc(var(--shell-title-offset) - var(--indentation) 
+                    - var(--context-indentation) - 2*var(--shell-border-width));
+    width: calc(var(--shell-title-width) + var(--indentation) 
+                    + var(--context-indentation) + 2*var(--shell-border-width));
+  }
+  /* If it is inside a shell inside a shell inside the context */
+  &.shell-labels #context [data-shell_title] [data-shell_title] [data-shell_title]::before {
+    left: calc(var(--shell-title-offset) - var(--indentation) 
+                                         - var(--context-indentation) 
+                                         - 3*var(--shell-border-width));
+    width: calc(var(--shell-title-width) + var(--indentation) 
+                                         + var(--context-indentation)
+                                         + 3*var(--shell-border-width));
+  }
+  /* 
+   * for backward compatibility in already saved documents, we have to manually
+   * handle Premises separately 
+   */
+   &.shell-labels [data-metadata_type*='"premise"']::before {
+    content: 'Premise:';
+   }
+
+} /* END of semantic view */
+
+/***********************************************************************/
+/*                           Feedback Icons                            */
+
+/* feedback icons on inline atoms */
+span.feedback-marker-valid::after,
+span.marker-checkmark::after,
+span.feedback-marker-indeterminate::after,
+span.marker-questionmark::after,
+span.feedback-marker-invalid::after,
+span.marker-redx::after,
+span.feedback-marker-inapplicable::after,
+span.marker-nosymbol::after,
+span.feedback-marker-error::after {
+  font-family: "Lucida Grande";
+  font-weight: bold;
+}
+span.feedback-marker-valid::after,
+span.marker-checkmark::after {
+  content: "✓";
+  color: var(--check-color);
+}
+span.feedback-marker-indeterminate::after, 
+span.marker-questionmark::after {
+  content: "?";
+  color: var(--questionmark-color);
+  /* background-color: var(--questionmark-background-color);
+  padding: 0px 3px;
+  border-radius: 3px; */
+}
+span.feedback-marker-invalid::after,
+span.marker-redx::after {
+  content: "✗";
+  color: var(--x-color);
+}
+span.feedback-marker-inapplicable::after, 
+span.marker-nosymbol::after {
+  content: "⊘";
+  font-size: 110%;
+  font-weight: bold;
+  color: var(--x-color);
+}
+span.feedback-marker-error::after {
+  content: "!";
+  color: var(--error-color);
+}
+div.lurch-atom[data-metadata_type*="rule"] span.feedback-marker-invalid::after,
+div.lurch-atom[data-metadata_type*="rule"] span.marker-redx::after {
+  content: "";
+  color: transparent;
+}
+/* feedback icons on shells */
+div.lurch-atom[data-shell_title][data-validation_result="valid"]::after,
+div.lurch-atom[data-shell_title][data-validation_result="indeterminate"]::after,
+div.lurch-atom[data-shell_title][data-validation_result="invalid"]::after,
+div.lurch-atom[data-shell_title][data-validation_result="error"]::after {
+  background-color: transparent;
+  font-family: "Lucida Grande";
+  font-weight: bold;
+  position: absolute;
+  bottom: 0; /* -7pt; */
+  right: 0pt;
+  padding: 0 6pt;
+}
+div.lurch-atom[data-shell_title][data-validation_result="valid"]::after {
+  content: "✓";
+  color: var(--check-color);
+}
+div.lurch-atom[data-shell_title][data-validation_result="indeterminate"]::after {
+  content: "?";
+  color: var(--questionmark-color);
+  /* background-color: var(--questionmark-background-color);
+  padding: 0px 3px;
+  border-radius: 3px; */
+}
+div.lurch-atom[data-shell_title][data-validation_result="invalid"]::after {
+  content: "✗";
+  color: var(--x-color);
+}
+div.lurch-atom[data-shell_title][data-validation_result="error"]::after {
+  content: "!";
+  color: var(--error-color);
+}
+
+/***********************************************************************/
+/*                       Shell background colors                       */
+
+/*  Rules, including premises and subproofs in minimal */
+[data-metadata_type*="rule"]:not(.atom-is-selected),
+#context [data-metadata_type*="rule"]:not(.atom-is-selected),
+body.shell-style-minimal 
+  [data-metadata_type*="rule"]:not(.atom-is-selected, :hover) .lurch-atom,
+#context [data-metadata_type*="rule"],
+body.shell-style-minimal #context [data-metadata_type*="rule"] .lurch-atom,
+body.shell-style-boxed 
+  [data-metadata_type*="rule"]:not(.atom-is-selected, :hover) 
+  span.lurch-atom:not(
+    [data-metadata_type*="premise"] span.lurch-atom,
+    [data-metadata_type*="subproof"] span.lurch-atom ) {
+  background-color: var(--rule-color);
+  border-color: var(--rule-color);
+}
+/* Premises */
+[data-metadata_type*="premise"]:not(.atom-is-selected) {
+  background-color: var(--premise-color);
+}
+/* Theorems */
+[data-metadata_type*="theorem"]:not(.atom-is-selected),
+#context [data-metadata_type*="theorem"]:not(.atom-is-selected),
+[data-metadata_type*="theorem"]:not(.atom-is-selected, :hover) .lurch-atom {
+  background-color: var(--theorem-color);
+  border-color: var(--theorem-color);
+}
+/* Recall */
+[data-metadata_type*="recall"]:not(.atom-is-selected),
+#context [data-metadata_type*="recall"]:not(.atom-is-selected),
+[data-metadata_type*="recall"]:not(.atom-is-selected, :hover) .lurch-atom {
+  background-color: var(--recall-color);
+  border-color: var(--recall-color);
+}
+
+/***********************************************************************/
+/*              Highlighting of nested shells on hover                 */
+
+/* Highlight on hover */
+
+/* in both views hovered inline atoms use the darker hover color except 
+   in the context box  */
+span.lurch-atom:hover:not( #context, #context * ) {
+  background-color: var(--hover-color);
+  border-color: var(--hover-color);
+}
+
+/* For minimal view highlight everything inside the innermost hovered shell */
+body.shell-style-minimal {
+  /* atoms which are hovered, but do not contain any hovered atom (by De Morgan's Law)
+     note that these also include hovered inline atoms */
+  :not(:not(.lurch-atom:hover), .lurch-atom:has(.lurch-atom:hover), #context, #context *),
+  /* and also all atoms which are contained in a hovered shell which does not
+     contain a hovered shell */
+  :not(:not(.lurch-atom:hover), .lurch-atom:has(.lurch-atom:hover), #context, #context *) .lurch-atom {
+    background-color: var(--hover-color);
+    border-color: var(--hover-color);
+  }
+}
+/* but for semantic view, only highlight the hovered shell and its inline atoms */
+body.shell-style-boxed {
+  /* atoms which are hovered, but do not contain any hovered atom (by De Morgan's Law) */
+  :not(:not(div.lurch-atom:hover), .lurch-atom:has(.lurch-atom:hover), #context, #context *),
+  /* and also inline atoms which ...  */
+  :not(
+    /* ...are contained in a hovered shell which does not contain a hovered shell 
+       AND ... */
+    :not(:not(:not(.lurch-atom:hover), .lurch-atom:has(.lurch-atom:hover)) span.lurch-atom),
+    /* ... are not contained in a shell which is not hovered  */
+    div.lurch-atom:not(:hover) span.lurch-atom,
+    #context, #context *
+    ) {
+      visibility: visible;
+      /* background-color: var(--semantic-hover-color); */
+  }
+}
+/* Make selected visible when parent is hovered */
+:not(:not(.lurch-atom:hover), .lurch-atom:has(.lurch-atom:hover)) {
+  .atom-is-selected:not(#context, #context *),
+  .atom-is-selected:not(#context, #context *) .lurch-atom,
+  .atom-is-selected:not(#context, #context *) .ML__latex {
+    background-color: var(--selected-color);
+  }
+
+} /* END highlight on hover */
+
+/***********************************************************************/
+/*                           Selected Atoms                            */
+
+/* We not only want to shade the background of a selected inline atom, but if
+the MathLive rendering spills outside the atom we want to shade that as well 
+but for atoms inside of the context box don't highlight anything */
+.atom-is-selected:not(#context, #context *),
+.atom-is-selected:not(#context, #context *) .lurch-atom,
+.atom-is-selected:not(#context, #context *) .ML__latex {
+  background-color: var(--hover-color);
+  outline: 3px solid var(--selected-color)
+  /* padding: 0; not sure why this was here.  */
+}
+/* Set the border color */
+#context.atom-is-selected,
+#context:has(.atom-is-selected),
+.mce-content-body [contentEditable="false"][data-mce-selected]:not(#context *) {
+  outline: 3px solid var(--selected-color);
+} /* END of selected atoms */
+
+
+/***********************************************************************/
+/*                             Code                                    */
+
+/* Code blocks use mono font, slightly larger, with a standard background
+   and less padding. */
+code {
+  font-size: 0.95em;
+  padding: 2px 3px;
+  border-radius: 4px;
+  /* font-family: 'Roboto Mono', 'Anonymous Pro', 'PT Mono', 'Oxygen monospace', monospace; */
+  font-family: "Anonymous Pro", "PT Mono", "Oxygen monospace", monospace;
+  background-color: var(--code-bg-color);
+}
+
+/***********************************************************************/
+/*                     Dependency URL atoms                            */
+
+.lurch-dependency {
+  border: solid 1px gray;
+  padding: 0 1em;
+}
+.lurch-dependency table {
+  table-layout: fixed;
+  width: 100%;
+}
+.lurch-dependency .lurch-borderless-table {
+  border: none;
+}
+.lurch-dependency col:first-of-type {
+  width: 12%;
+}
+.lurch-dependency td {
+  vertical-align: baseline;
+}
+.lurch-dependency tr:nth-of-type(2) td:first-of-type {
+  font-size: 11pt;
+}

@@ -1,0 +1,48 @@
+include libs/Sets
+////////////////////////////////////////////////////////////////////////////
+// Elementary Functions Lurch Lib
+//
+
+//////////////////////////////////
+// Definitions for Functions
+//////////////////////////////////
+Declare NN, ZZ, QQ, RR, CC, maps, inv, ∘ 
+Declare Domain, Codomain, Range, injective, surjective, bijective
+Definitions:  
+{
+	:{ :f:A→B :x∈A  f(x)∈B }                     // function
+	:{ :f:A→B Domain(f)=A Codomain(f)=B }        // domain & codomain
+  :{ :f = (x ↦ 𝜆P(x))  f(z) = 𝜆P(z) }          // lambda expression
+  :{ :f:A→B :g:A→B 
+	   :{ Let x such that x∈A  f(x)=g(x) }
+     f=g
+	}                                            // function equality
+  :{ :x∈S f(x)∈f(S) }                          // image
+  :{ :y∈f(S)  x∈S and y=f(x) for some x }      // image
+  :{ id(A):A→A  { :x∈A id(A)(x)=x } }          // identity map
+  :{ :f:A→B :g:B→C g∘f:A→C }                   // composition
+  :{ :f:A→B :g:B→C (g∘f)(x)=g(f(x)) }          // composition
+  :{ :f is injective  :f(x)=f(y) x=y }         // injective
+  :{ :f:A→B
+		 :{ Let x,y be such that f(x)=f(y)
+			  x=y 
+		 }
+     f is injective }                          // injective
+  :{ :f:A→B :f is surjective :b∈B  
+		  a∈A and b=f(a) for some a
+	}                                            // surjective
+	:{ :f:A→B 
+		 :{ Let b such that b∈B
+			  ∃a.b=f(a)
+		 }  
+		 f is surjective }                         // surjective
+  :{ f is bijective ≡ 
+		 f is injective  f is surjective }         // bijective
+	:{ :f:A→B  :g:B→A 
+		 :g∘f=id(A) :f∘g=id(B)
+	   f⁻=g }                                    // inverse function
+	// :{ :f:A→B  :f is bijective 
+	//     f⁻:B→A  f⁻(f(x))=x  f(f⁻(y))=y }      // inverse function
+
+	:{ :a∈f^inv(S) ≡ f(a)∈S }		                 // inverse image
+} 

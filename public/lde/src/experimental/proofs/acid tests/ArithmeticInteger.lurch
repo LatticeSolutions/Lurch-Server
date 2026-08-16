@@ -1,0 +1,53 @@
+////////////////////////////////////////////////////////////////////
+// Tests for Arithmetic in ℤ by CAS
+
+➤ "Arithmetic in ℤ (via CAS)"
+// Declare the relevant symbols
+Declare Arithmetic, ZZ, =, leq, <, +, !, *, -, ^, division 
+
+// This file tests Arithmetic in ℕ
+Rule: :{ Arithmetic(ZZ) }
+
+// valid ones
+{ 
+  (-1=-1) ✔︎ by arithmetic
+  (-1≤1) ✔︎ by arithmetic
+  (-1<2) ✔︎ by arithmetic
+  1-1=0 ✔︎ by arithmetic
+  (-1+1=0) ✔︎ by arithmetic
+  (-2*3=-6) ✔︎ by arithmetic
+  2*(-3)=-6 ✔︎ by arithmetic
+  (-2^3=-8) ✔︎ by arithmetic
+  (-3!=-2*3) ✔︎ by arithmetic
+  (2 neq 3) ✔︎ by arithmetic
+  (-2 neq 2) ✔︎ by arithmetic
+  (2 neq 2-3) ✔︎ by arithmetic
+	} 
+
+// invalid ones
+{
+  1<-1 ✗ by arithmetic
+  1+1<-2 ✗ by arithmetic
+  2*3<-6 ✗ by arithmetic
+  2^3<-8 ✗ by arithmetic
+  (-3!<-2*3) ✗ by arithmetic
+  (-2*3^2=19) ✗ by arithmetic
+  (2 neq 2) ✗ by arithmetic
+  (-2 neq -2) ✗ by arithmetic
+  (-2 neq 2-4) ✗ by arithmetic
+}
+
+// inapplicable ones
+{
+  6/3=2 ⊘ by arithmetic // no division
+  1+2/2=2 ⊘ by arithmetic // no division
+  2^(-1)<3 ⊘ by arithmetic // no negative exponents
+  1+1+1≤2 ⊘ by arithmetic // no associative ops
+  2^(-1) ⊘ by arithmetic // no negative exponents
+  2^(1/2) ⊘ by arithmetic // no rational exponents
+  3/0 ⊘ by arithmetic // no zero denominators
+  3/(2-2) ⊘ by arithmetic // no zero denominators
+  (2/1 neq 2) ⊘ by arithmetic
+  (-2^(1/2) neq -2) ⊘ by arithmetic
+  (-2^(-1) neq 2-4) ⊘ by arithmetic
+}

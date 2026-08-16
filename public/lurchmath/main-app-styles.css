@@ -1,0 +1,335 @@
+/*
+ * This file styles the main app page in which the menu bar, toolbar, and editor
+ * iframe are installed.  This is the outermost page of the Lurch application.
+ * Styling for the editor iframe within that page is in editor-styles.css.
+ */
+
+/* import Lato font for Logo and Roboto for the rest */
+@import url('https://fonts.googleapis.com/css2?family=Lato:wght@900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,400;0,700;1,400;1,700&family=Roboto:ital,wght@0,400;0,700;1,400;1,700&display=swap');
+
+/* theme vars */
+:root {  
+  /* colors */
+
+  /* hovered atom background color */
+  --hover-color: #bbd6fb; /* rgb(187,214,251); #B9D9F2*/
+  /* semantic hovered atom background color */
+  --semantic-hover-color: #f2f8ff;/* blues:#f0f7ff; #ebf3ff; yellows: #fff9dc;  #fffce9; */
+  /* selected atom backround color */
+  --selected-color: #a1c6f5;
+  /* borders and titles of shells color */
+  --border-color: #b4d7ff;
+  /* marginal annotation of shell types */
+  --margin-color:  #b4d7ff; /* transparent; */
+  /* left border of shells in semantic view */
+  --left-border-color: #b4d7ff;
+  /* green checkmark color */
+  --check-color: #4caf50;
+  /* question mark feedback icon color */
+  --questionmark-color: #d8b400; /* or white if background used */
+  /* question mark feedback icon background color */
+  --questionmark-background-color: chocolate;
+  /* red X feedback icon color */
+  --x-color: red;
+  /* exclamation point error feedback icon color */
+  --error-color: red;
+  /* default shell background color */
+  --atom-color: white;
+  /* rule shell background color */
+  --rule-color: #e7f3fd;
+  /* premise shell background color */
+  --premise-color: #fff6e9;
+  /* theorem shell background color */
+  --theorem-color: #f5f5f5;
+  /* recall shell background color */
+  --recall-color: #efe9f1;
+  /* inline semantic math expression font color */
+  --code-bg-color: #ecf0f1; /* matches TinyMCE light gray */
+  /* base font size */
+  /* inline semantic math expression font color */
+  --math-color: #cd853f; /* turquoise #079aa3 golds #cd853f or #D8833B; */
+  /* Validation completed dialog colors */
+  --completed-background: #e6eedc; 	/* hsl(87, 35%, 90%) */
+  --completed-border:	hsl(87, 42%, 78%);
+  --completed-shadow:	hsla(87, 42%, 78%,50%);
+
+}
+
+/* Background color */
+body {
+  margin: 0;
+  min-height: 100vh;
+}
+
+/* Don't use background color in full screen or embedded mode so that it doesn't
+   peek in around the rounded corners of the application. */
+html:not(.lurch-embed) body:not(.fullscreen) {
+  background: linear-gradient(45deg, darkslategrey, transparent);
+}
+
+/* Prevent this from being seen while the page is loading. */
+textarea#editor {
+  display: none;
+}
+
+/* position and size the editor container div */
+#editor-container {
+  margin: 0 auto;
+  height: 100vh;
+  position: relative
+}
+
+/* set the maximum width for fixed width mode  */
+body:not(.fullscreen) #editor-container {
+  max-width: 853px;
+}
+
+/* The Lurch Logo  */
+#logo {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 120px;
+  z-index: 9999;
+  /* temporarily moving the logo so it doesn't overlap the toolbar icons when
+  the screen is narrow */
+  /* margin: 25.5px 40px; */
+  margin: 10px 10px;
+  font-size: xx-large;
+  font-family: Lato;
+  font-weight: 900;
+  letter-spacing: -0.01em;
+  color: #000;
+  text-align: center;
+}
+
+/* Hide the Logo in full screen view */
+.tox-fullscreen #logo {
+  display: none !important;
+}
+
+#logo #check {
+  color: #4CAF50;
+}
+
+#logo a {
+  color: #000;
+  text-decoration: none;
+}
+
+/* We need to tell the outermost dialog wrapper to allow the textarea to be
+resized manually, but only want to target it for the dialog that contains the
+advancedTextArea */
+.tox .tox-dialog:has(.advancedTextArea) {
+  width: auto;
+  max-width: 95vw;
+  min-width: 480px;
+}
+/* The text area for the advanced mode expression editor should be resizable. */
+.tox .tox-textarea-wrap .tox-textarea.advancedTextArea:focus,
+.tox .tox-textarea-wrap .tox-textarea.advancedTextArea {
+  resize: both;
+  font-family: "Roboto Mono", monospace;
+  overflow: auto;
+  box-sizing: border-box;
+}
+/* we also want the preview div below the text area to scroll horizontally when necessary */
+/* The preview itself should scroll horizontally instead of forcing the dialog wider. */
+.tox .tox-dialog:has(.advancedTextArea) #math-latex {
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+/* The text area for the advanced mode expression editor with bad syntax */
+/* Note: if you want to style the border instead, target 
+   .tox.tox-textarea-wrap:focus-within, */
+.tox .tox-textarea-wrap .tox-textarea.advancedTextArea.badsyntax:focus,
+.tox .tox-textarea-wrap .tox-textarea.advancedTextArea.badsyntax {
+  background-color: #fff7f7
+}
+
+/* The info icon div in the expository math dialog */
+.tox .tox-dialog div#latexDialogLabel {
+  font-size: 0.8rem;
+  color: #7CA2EB;
+  cursor: default;
+  margin-bottom: 0.3rem;
+}
+.tox .tox-dialog div#latexDialogLabel span#info-icon {
+  display: inline-block;
+  position: relative;
+  font-family: "Font Awesome 6 Free"; 
+  font-weight: 900;
+  font-size: 0.7rem;
+  line-height: 1; 
+  color: var(--selected-color); 
+  margin-left: 0.1rem;
+  font-style: normal;
+  font-variant: normal;
+  text-rendering: auto;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-font-smoothing: antialiased;
+}
+.tox .tox-dialog div#latexDialogLabel #tooltip-text {
+  visibility: hidden;
+  opacity: 0;
+  position: absolute;
+  left: 120%;
+  top: 50%;
+  transform: translateY(-50%);
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  color: inherit; 
+  font-size: 0.75rem;
+  font-weight: 500;
+  padding: 0.3rem 0.5rem;
+  border-radius: 4px;
+  white-space: nowrap;
+  transition: opacity 0.5s;
+  z-index: 1000;
+}
+.tox .tox-dialog div#latexDialogLabel #info-icon .fa-circle-info:hover + #tooltip-text {
+  visibility: visible;
+  opacity: 1;
+}
+
+/* shortbcut hits for expression dialog */
+.tox .tox-dialog div#shortcut-hint {
+  margin-top: 0.35rem;
+  font-size: 0.70rem;
+  text-align: center;
+  color: #7CA2EB;
+}
+.tox .tox-dialog div#shortcut-hint .sep {
+  padding: 0 2.35em;
+  color: #7CA2EB;
+}
+.tox .tox-dialog div#shortcut-hint kbd {
+  font-family: inherit;
+  font-size: 0.92em;
+  border-radius: 4px;
+  padding: 0.05em 0.32em;
+  margin: 0 0.05em;
+  white-space: nowrap;
+  background: #f8faff;
+  border: 1px solid #e3e9fb;
+  color: #7CA2EB;
+}
+/* a wrapper to add a hl separator */
+.tox .tox-dialog div#shortcut-footer {
+  display: none;
+  margin-top: 0.45rem;
+  padding-top: 0.15rem;
+  border-top: 1px solid #e8ecf6;
+  position: relative;
+  top: 0.75rem;
+}
+/* make it visible iff they blur */
+.tox .tox-dialog div#shortcut-footer.visible {
+  display: block;
+}
+.tox .tox-dialog div#shortcut-footer,
+.tox .tox-dialog div#shortcut-footer * {
+  cursor: default;
+}
+
+/* The MathJax preview div in the Advanced mode text editor (display)*/
+.tox .tox-dialog div#mathjaxPreview mjx-container[jax="SVG"][display="true"] {
+  width: 100%;
+  border: 0;
+  padding: 0;
+  margin: 0;
+}
+
+/* The validation progress dialog */
+.tox div.tox-dialog.progress-dialog {
+  max-width: 240px;
+  background-color: var(--rule-color);
+  border: 2px solid var(--border-color);
+  box-shadow: 7px 7px 9px var(--border-color);
+}
+.tox div.tox-dialog.validation-completed {
+  max-width: 240px;
+  background-color: var(--completed-background);
+  transition: background-color 0.3s ease;
+  /* border: 2px solid var(--completed-border);
+  box-shadow: 7px 7px 9px var(--completed-shadow); */
+}
+.tox div.tox-dialog.progress-dialog div#progress-row {
+  display: flex; 
+  justify-content: space-between; 
+  align-items: center; 
+  padding: 0.5em;
+}
+.tox div.tox-dialog.progress-dialog #progress-close {
+  cursor: pointer; 
+  color: var(--math-color); 
+  font-size: 1.2em;
+}
+.tox div.tox-dialog.progress-dialog .tox-dialog__body-content {
+  padding: 0 8pt;
+}
+.tox div.tox-dialog.progress-dialog .tox-form__group {
+  margin-bottom: 0;
+}
+
+
+/* Search box for filtering the rules list */
+.tox .search-label {
+  margin: 12px 0 6px;
+}
+
+.tox .search-input {
+  margin: 0 18px 0 6px;
+  padding: 3px;
+  border: 1px solid #90979E;
+  border-radius: 4px;
+}
+
+/* override the repeating gradient to avoid extraneous hrule in the search area */
+div.tox .tox-toolbar__overflow {
+  background-image: linear-gradient(#e3e3e3 0 1px, transparent 1px 39px);
+}
+
+/* toggle instructor menu */
+.tox.hide-instructor-menu .lurch-instructor-menu-button {
+    display: none;
+}
+ 
+/* Document File Name */
+/* Commenting this out for now until we design something better */
+
+#lurch-filename-display {
+  display: none;
+}
+
+/*
+div:has(> #lurch-filename-display) {
+    position: relative;
+    padding-top: 0.3rem;
+}
+
+#lurch-filename-display {
+    position: absolute;
+    top: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-family: 'Anonymous Pro', 'PT Mono', 'Oxygen monospace', monospace;
+    color: darkgoldenrod;
+    font-weight: 500;
+}
+#lurch-filename-display::before {
+    content: '(';
+    font-family: 'Anonymous Pro', 'PT Mono', 'Oxygen monospace', monospace;
+    color: darkslategrey;
+    font-weight: 500;
+}
+#lurch-filename-display::after {
+    content: ')';
+    font-family: 'Anonymous Pro', 'PT Mono', 'Oxygen monospace', monospace;
+    color: darkslategrey;
+    font-weight: 500;
+}
+ *
+ */

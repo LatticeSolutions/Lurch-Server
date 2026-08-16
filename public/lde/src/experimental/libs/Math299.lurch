@@ -1,0 +1,313 @@
+////////////////////////////////////////////////////////////////////////////
+//
+// Propositional Logic Lib
+//
+
+// Global Constants - we don't want any of these to be metavariables
+Declare and, or, ⇒, ⇔, ¬, →←
+
+Rules:
+{ 
+  
+  ////////////////////////////////
+  // ND Propositional Logic Axioms
+  ////////////////////////////////
+  :{ {W V}  ≡  W and V }                // and+
+  :{ {:W V} ≡  W⇒V }                    // ⇒
+  :{ { {:W V} {:V W} } ≡ W⇔V }          // ⇔
+  :{ :W  (W or V) (V or W) }            // or+
+  CasesRule: 
+  :{ :(W or V) :{:W U} :{:V U}  U }     // or-
+  :{ :{:W →←}  ¬W }                     // ¬+
+  :{ :{:¬W →←}  W }                     // ¬-
+  :{ :W :¬W →← }                        // →←+
+
+}
+////////////////////////////////////////////////////////////////////////////
+// Predicate Logic Lurch Lib
+//
+
+// Global Constants - we don't want any of these to be metavariables
+Declare ∀, ∃, ∃!, =
+
+////////////////////////////////
+// ND Predicate Logic Axioms
+////////////////////////////////
+Rules:  
+{
+  
+  :{ :(∀x.𝜆P(x))  𝜆P(t) }               // ∀-
+  :{ :{ :Let x  𝜆P(x) }  ∀y.𝜆P(y) }     // ∀+
+  :{ :(∃x. 𝜆P(x)) 𝜆P(c) for some c }    // ∃-
+  :{ :𝜆P(t) ∃x.𝜆P(x) }                  // ∃+
+  :{ :x = y  :𝜆P(x) 𝜆P(y) }             // substitution
+  :{ W = W }                            // reflexive =
+  :{ (∃!x.𝜆P(x)) ≡                      // ∃!
+     (∃x.𝜆P(x) and (∀y.𝜆P(y) ⇒ y = x)) 
+   }                                    
+} 
+
+//////////////////////////////////
+// ND Propositional Logic Theorems
+//////////////////////////////////
+
+// We comment out some of these for efficiency, since 'and' and '⇒' and to an 
+// extent ⇔ are all 'built-in' to the notation of an LC, and thus rules 
+// involving their formal properties are not as useful in this new setting.
+Rules:
+{ 
+  :{ W or ¬W }                                  // exclusive middle
+  :{ ¬(¬W) ≡ W }                                // double negative
+  :{ W and W ≡ W }                              // idempotency of and
+  :{ W or W ≡ W }                               // idempotency of or
+  // :{ :(and W V) (and V W) }                  // commutativity of and
+  :{ :W or V   V or W }                         // commutativity of or
+  // :{ :(⇔ W V) (⇔ V W) }                      // commutativity of ⇔
+  // :{ (and (and W V) U) ≡ (and W (and V U)) } // associativity of and
+  :{ (W or V) or U ≡  W or (V or U)  }          // associativity of or
+  :{ (W⇔V)⇔U ≡ W⇔(V⇔U) }                        // associativity of ⇔
+  :{ { W (V or U) } ≡ (W and V) or (W and U) }  // distributivity of and/or
+  :{ W or (V and U) ≡ { (W or V) (W or U) } }   // distributivity of or/and
+  :{ :(W ⇒ V) :(V ⇒ U) (W ⇒ U) }                // transitivity of ⇒
+  :{ :(W ⇔ V) :(V ⇔ U) (W ⇔ U) }                // transitivity of ⇔
+  :{ W ⇒ V ≡ ¬W or V }                          // alternate def of ⇒
+  :{ :W or V :¬W   V }                          // alternate or-  
+  :{ :W or V :¬V   W }                          // alternate or-
+  :{ ¬(W ⇒ V) ≡ { W ¬V } }                      // negated implication
+  :{ W ⇒ V ≡ ¬V ⇒ ¬W }                          // contrapositive
+  :{ ¬(W and V) ≡ ¬W or ¬V }                    // DeMorgan
+  :{ ¬(W or V)  ≡ { ¬W ¬V } }                   // DeMorgan
+  :{ :→← W }                                    // contradiction-
+}
+////////////////////////////////////////////////////////////////////////////
+// Peano Axioms Lurch Lib
+//
+
+// TODO: the next line is a theorem, provable from N4, and would be a speedup
+// allowing us to skip the need for a ∀ statement, but currently it won't
+// instantiate without a BIH.
+//
+// :{ :𝜆P(0) :{ :Let k be such that 𝜆P(k)   𝜆P(𝜎(k)) } 𝜆P(n) }   // alt N4
+
+// Declare constants
+Declare 0, 𝜎, +, ⋅, ≤
+
+////////////////////////////////
+// Peano Axioms
+////////////////////////////////
+Axioms: 
+{
+  :{ :𝜎(m)=𝜎(n) m=n }                                             // N2
+  :{ 0 ≠ 𝜎(n) }                                                    // N3
+  :{ :𝜆P(0) :{ :Let k be such that 𝜆P(k)   𝜆P(𝜎(k)) } ∀n.𝜆P(n) }  // N4
+  :{ n+0=n }                                                      // A0
+  :{ m+𝜎(n)=𝜎(m+n) }                                              // A1
+  :{ n⋅0=0 }                                                      // M0
+  :{ m⋅𝜎(n)=m+m⋅n }                                               // M1       
+  :{ m≤n ≡ ∃k.m+k=n  }                                            // I
+} 
+////////////////////////////////////////////////////////////////////////////
+// Number Theory Lurch Lib
+//
+
+////////////////////////////////
+// Number Theory Definitions
+////////////////////////////////
+Definitions:  
+{
+  Declare 1, 2, 3, 4, 5, |, prime, even, is 
+  :{ 1=𝜎(0) }
+  :{ 2=𝜎(1) }
+  :{ 3=𝜎(2) }
+  :{ 4=𝜎(3) }
+  :{ 5=𝜎(4) }  
+  
+  // divides
+  :{ m|n ≡ ∃k.n=m⋅k }
+  // prime
+  :{ n is prime ≡ { 1<n ¬(∃k.1<k and k<n and k|n) } }
+	// even
+	:{ :n is even   n=2⋅m for some m }
+	:{ :n=2⋅m       n is even }
+} 
+////////////////////////////////////////////////////////////////////////////
+// Equations Rule
+//
+// We just include the Equations rule here so that we can compare, e.g.
+// Peano proofs using BIHs to ones using the Equations rule.
+
+Rules:
+{
+  // and at this point we want the helpful Equations Rule
+  :{ :EquationsRule }
+} 
+////////////////////////////////////////////////////////////////////////////
+// Peano Axioms - basic theorems
+//
+// This library has no dependencies, so it can be loaded ad-hoc into other 
+// libraries or documents as needed.  But one would assume that such a 
+// document will already have loaded basic logic and the Peano Axioms, and 
+// probably the Equations lib.
+
+Rules: 
+{
+  :{ 𝜎(n)=n+1 }           // alt def 𝜎
+
+  :{ m+n=n+m }            // comm + 
+  :{ (m+n)+p=m+(n+p) }    // assoc + 
+	
+  :{ n⋅1=n 1⋅n=n }        // ident ⋅ 
+  :{ m⋅n=n⋅m }            // comm ⋅
+  :{ (m⋅n)⋅p=m⋅(n⋅p) }    // assoc ⋅
+
+	:{ m⋅(n+p)=m⋅n+m⋅p (n+p)⋅m=n⋅m+p⋅m }  // distributive
+
+} 
+////////////////////////////////////////////////////////////////////////////
+// Recursion Lurch Lib
+//
+
+//////////////////////////////////
+// Recursive Sequence Definitions
+//////////////////////////////////
+Declare  F, multinom // , ∑
+
+Definitions:  
+{
+		// summation
+    // :{ ∑(0,k.𝜆P(k)) = 𝜆P(0) }
+    // :{ ∑(𝜎(n),k.𝜆P(k)) = 𝜆P(𝜎(n)) + ∑(n,k.𝜆P(k)) }
+
+		// natural number exponents
+		:{ z^0=1 }
+		:{ z^𝜎(n)=z⋅z^n }
+
+    // factorial (TODO: make the peggy parser work for factorials)
+
+		// Fibonacci
+    :{ F(0)=1 F(1)=1 }
+		:{ F(n+2)=F(n+1)+F(n) }
+
+		// multinomial coefficient
+		:{ multinom(m,0)=1 multinom(0,n)=1 }
+		:{ multinom(m+1,n+1)=multinom(m+1,n)+multinom(m,n+1) }
+		// choose
+		:{ choose(n+m,m)=multi(n,m)}		
+} 
+////////////////////////////////////////////////////////////////////////////
+// Real Numbers Lurch Lib
+//
+
+//////////////////////////////////
+// Axioms for the Reals
+//////////////////////////////////
+Declare ^, -  // for the inverse notation f⁻, which is (^ f -)
+Axioms:  
+{
+		// Axioms of addition
+		:{ x+0=x  0+x=x }                         // identity + 
+		:{ x+(-x)=0   -x+x=0 }                    // inverse + 
+		:{ x+y=y+x }                              // commutativity +
+		:{ (x+y)+z=x+(y+z) }                      //associativity of +
+		// Axioms of Multiplication
+		:{ 1≠0 1⋅x=x x⋅1=x }                      // identity ⋅ 
+		:{ :x≠0  (x⁻)⋅x = 1  x⋅(x⁻)= 1 }          // inverse ⋅ 
+		:{ x⋅y=y⋅x }                              // commutativity of ⋅
+		:{ (x⋅y)⋅z = x⋅(y⋅z) }                    // associativity of ⋅
+		// Axioms of Order
+		:{ ¬(x<x) }                               // irreflexive
+		:{ :x<y  :y<z   x<z }                     // transitive 
+		:{  x=y or (x<y or y<x) }                 // trichotomy 
+		// "Every bounded above sequence of real numbers has a least upper bound"   // complete
+		// Axioms Relating +, ⋅, and <
+		:{ x⋅(y+z) = x⋅y + x⋅z   (y+z)⋅x = y⋅x + z⋅x }  // distributivity +,⋅
+		:{ :x<y  x+z<y+z }                              // translation +,<
+		:{ :0<x  :0<y   0<x⋅y }                         // product of positives ⋅,<		
+} 
+////////////////////////////////////////////////////////////////////////////
+// Elementary Naive Set Theory Lurch Lib
+//
+
+//////////////////////////////////
+// Definitions for Sets
+//////////////////////////////////
+Declare Set, ∈, ⊆, ∩, ∪, ∖, °, 𝒫
+Axioms:  
+{
+	:{ x ∉ Set() }                                // empty set
+	:{ x ∈ Set(a) ≡ x=a }                         // Finite Set Notation
+	:{ x ∈ Set(a,b) ≡ x=a or x=b }                // Finite Set Notation
+	:{ x ∈ Set(a,b,c) ≡ (x=a or x=b) or x=c }     // Finite Set Notation
+	:{ x ∈ Set( z.𝜆P(z) ) ≡ 𝜆P(x)  }              // Set builder notation 
+	:{ :{:Let x be such that x∈A  x∈B } A⊆B }     // Subset+
+	:{ :A⊆B :x∈A  x∈B }                           // Subset-
+	:{ :{:Let a be such that a∈A  a∈B}
+		 :{:Let b be such that b∈B  b∈A} 
+		 A=B
+	}                                            // Set equality                         
+	:{ A ∈ 𝒫(B) ≡ A⊆B }                          // Power set
+	:{ x ∈ A∩B ≡ { x∈A x∈B } }                   // Intersection
+	:{ x ∈ A∪B ≡  x∈A or x∈B }                   // Union
+	:{ x ∈ A∖B ≡ { x∈A  x∉B } }                  // Relative Complement 
+	:{ x ∈ A° ≡ x∉A }                            // Complement
+	
+	:{ ⟨x,y⟩ = ⟨u,v⟩ ≡ { x=u y=v } }                      // Ordered Pairs
+	:{ ⟨x,y,z⟩ = ⟨u,v,w⟩ ≡ { x=u y=v z=w } }              // Ordered Triple
+		
+	:{ z∈A×B ≡ { a∈A b∈B z=⟨a,b⟩ for some a,b} }          // Cartesian Product
+	:{ z∈A×B×C ≡ { a∈A b∈B c∈C z=⟨a,b,c⟩ for some a,b } } // Cartesian Product
+
+	// :{ x ∈ T i∈I Ai ≡ ∀i.i∈I⇒x∈Ai }               // Indexed Intersection
+	// :{ x ∈ S i∈I Ai ⇔ ∃i, i ∈ I and x ∈ Ai }       // Indexed Union
+	// Two convenient abbreviations
+	// (∀x ∈ A, P (x))⇔ ∀x, x ∈ A ⇒ P(x)
+	// (∃x ∈ A, P (x))⇔ ∃x, x ∈ A and P(x)
+
+} 
+////////////////////////////////////////////////////////////////////////////
+// Elementary Functions Lurch Lib
+//
+
+//////////////////////////////////
+// Definitions for Functions
+//////////////////////////////////
+Declare maps, is, ℕ, ℤ, ℚ, ℝ, ℂ, inv, ∘ 
+Declare Domain, Codomain, Range, injective, surjective, bijective
+Definitions:  
+{
+	:{ :f:A→B :x∈A  f(x)∈B }                     // function
+	:{ :f:A→B Domain(f)=A Codomain(f)=B }        // domain & codomain
+  :{ :f = (x ↦ 𝜆P(x))  f(z) = 𝜆P(z) }            // lambda expression
+  :{ :f:A→B :g:A→B 
+	   :{ Let x such that x∈A  f(x)=g(x) }
+     f=g
+	}                                            // function equality
+  :{ :x∈S f(x)∈f(S) }                          // image
+  :{ :y∈f(S)  x∈S and y=f(x) for some x }      // image
+  :{ id(A):A→A  { :x∈A id(A)(x)=x } }          // identity map
+  :{ :f:A→B :g:B→C g∘f:A→C }                   // composition
+  :{ :f:A→B :g:B→C (g∘f)(x)=g(f(x)) }          // composition
+  :{ :f is injective  :f(x)=f(y) x=y }         // injective
+  :{ :f:A→B
+		 :{ Let x,y be such that f(x)=f(y)
+			  x=y 
+		 }
+     f is injective }                          // injective
+  :{ :f:A→B :f is surjective :b∈B  
+		  a∈A and b=f(a) for some a
+	}                                            // surjective
+	:{ :f:A→B 
+		 :{ Let b such that b∈B
+			  ∃a.b=f(a)
+		 }  
+		 f is surjective }                         // surjective
+  :{ f is bijective ≡ 
+		 f is injective  f is surjective }         // bijective
+	:{ :f:A→B  :g:B→A 
+		 :g∘f=id(A) :f∘g=id(B)
+	   f⁻=g }                                    // inverse function
+	// :{ :f:A→B  :f is bijective 
+	//     f⁻:B→A  f⁻(f(x))=x  f(f⁻(y))=y }         // inverse function
+
+	:{ :a∈f^inv(S) ≡ f(a)∈S }		                 // inverse image
+} 

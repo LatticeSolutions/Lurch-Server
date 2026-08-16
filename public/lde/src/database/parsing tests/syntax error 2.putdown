@@ -1,0 +1,6 @@
+---
+testing:
+  syntax: invalid
+---
+
+{* A B C *} // invalid because we deleted formula notation

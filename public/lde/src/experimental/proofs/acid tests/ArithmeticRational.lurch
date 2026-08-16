@@ -1,0 +1,42 @@
+////////////////////////////////////////////////////////////////////
+// Tests for Arithmetic in ℚ by CAS
+
+➤ "Arithmetic in ℚ (via CAS)"
+// Declare the relevant symbols
+Declare Arithmetic, QQ, =, leq, <, +, !, *, -, ^, division 
+
+// This file tests Arithmetic in ℕ
+Rule: :{ Arithmetic(QQ) }
+
+// valid ones
+{ 
+  (-1/2=-1/2) ✔︎ by arithmetic
+  (-1/3≤1/3) ✔︎ by arithmetic
+  (-1<2/1) ✔︎ by arithmetic
+  1/2-1/2=0 ✔︎ by arithmetic
+  (-1/3+1/3=0) ✔︎ by arithmetic
+  (6/3=2) ✔︎ by arithmetic
+  (-3!/2=-3) ✔︎ by arithmetic
+  (3+4)/(10-3)=1 ✔︎ by arithmetic
+  1/(1/(1+1))=2 ✔︎ by arithmetic
+	1/3!=1/6 ✔︎ by arithmetic
+  2^(-1)<3 ✔︎ by arithmetic
+  2^(-2/2)<3 ✔︎ by arithmetic
+}
+
+// invalid ones
+{
+  3/2<1 ✗ by arithmetic
+  2<3/2 ✗ by arithmetic
+  0<1/(-2) ✗ by arithmetic
+	3/6=2 ✗ by arithmetic
+}
+
+// inapplicable ones
+{
+  1+1+1≤2 ⊘ by arithmetic // no associative ops
+  2^(-1) ⊘ by arithmetic // no negative exponents
+  2^(1/2) ⊘ by arithmetic // no noninteger exponents
+  3/0 ⊘ by arithmetic // no zero denominators
+  3/(2-2) ⊘ by arithmetic // no zero denominators
+}

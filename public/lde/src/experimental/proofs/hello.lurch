@@ -1,0 +1,10 @@
+// Declare 2,|,is,even,+,loves,gcd,<
+
+Rule {  if 2|n    n is even  }
+
+// Spiders love coffee    
+// 2 | Spiders
+// Spiders is even
+// If 2 | coffee       coffee is even
+// 2 | coffee   gcd(3,5)<2 coffee is even
+// Theorem: { If 2|coffee   coffee is even }

@@ -1,0 +1,25 @@
+---
+testing:
+  type: validation
+  subtype: formula
+  description: "A valid instantiation, but not the one needed to justify the conclusion."
+---
+
+// document
+
+(⇒ ¬ or),{                                       
+  :{ :(⇒ P Q) (or (¬ P) Q) }     \label{alt def of ⇒}
+  // start a proof
+  {  
+     :(⇒ A B)                             
+     (or (¬ A) B)                 \invalid
+  }
+}
+
+// instantiation
+
+( instantiation 
+   (formula "alt def of ⇒")        
+   ((P A) (Q A))                   
+   (result "valid")                
+)

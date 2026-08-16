@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>Lurch</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <script type="module" src="./editor.js"></script>
+        <link rel="shortcut icon" href="favicon.ico">
+        <link rel="stylesheet" href="main-app-styles.css">
+    </head>
+    <body>
+        <div id="editor-container">
+            <div id="logo">Lurch<span id="check">&#x2713</span></div>
+        </div>
+        <script>
+            // The default behavior is to set up the app as soon as the page
+            // loads, but this can be canceled with the ?delayLoad=true query
+            // parameter.
+            const params = new URLSearchParams( window.location.search )
+            if ( params.get( 'delayLoad' ) != 'true' ) {
+                // Default behavior:
+                window.addEventListener( 'load', () => {
+                    Lurch.createApp( document.getElementById( 'editor-container' ), {
+                        // options go here
+                    } )
+                } )
+            } else {
+                // Same as above, but not upon page load, rather upon hearing a
+                // message from the outer page containing our setup options.
+                window.addEventListener( 'message', event => {
+                    if ( event.data.hasOwnProperty( 'lurch-app-create' ) ) {
+                        Lurch.createApp(
+                            document.getElementById( 'editor-container' ),
+                            event.data['lurch-app-create']
+                        )
+                    }
+                } )
+            }
+        </script>
+    </body>
+</html>

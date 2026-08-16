@@ -1,0 +1,973 @@
+<!doctype html>
+<html lang=en-US>
+<head>
+	<meta charset=UTF-8>
+	<title>LurchMath</title>
+
+  <script type="module">
+    import { parse as lurch2putdown } from './lurch-to-putdown.js'
+    const lurch2tex = ( s, opts = {} ) => lurch2putdown( s, { ...opts, tex: true } )
+    window.onload = function() {
+      const textarea = document.getElementById('source')
+      const update = () => {
+        const text = textarea.value
+        
+        // resize to fit the input
+        textarea.style.height = '0' // reset to force the browser to compute the correct height
+        textarea.style.height = `${textarea.scrollHeight}px` 
+
+        // update the mathjax and putdown
+        let tex,putdown
+        try { 
+          const isBlank = /^\s*$/.test(text)
+          tex = (!isBlank) ? `$${lurch2tex(text,{enableSets:true})}$` : ''
+          putdown = (!isBlank) ? lurch2putdown(text,{enableSets:true}) : ''
+          textarea.classList.remove('badparse')
+          const meaningDiv = document.getElementById('meaning')
+          meaningDiv.textContent = putdown
+          const renderDiv = document.getElementById('rendered')
+          renderDiv.innerHTML = tex
+          try { MathJax.typeset([renderDiv]) } catch (e) { }
+        } catch (e) {  
+          textarea.classList.add('badparse')
+        }
+      }
+      update()
+      textarea.addEventListener('input', update)
+    }
+  </script>
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [ ['$','$'], ["\\(","\\)"] ],
+        processEscapes: true
+      }
+    };
+  </script>
+  <script type="text/javascript" id="MathJax-script" async
+    src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js">
+  </script>
+  <link rel="shortcut icon" href="favicon.svg">
+	<link href=https://fonts.googleapis.com/css?family=Quicksand
+			rel=stylesheet type=text/css>
+	<link rel=stylesheet href=lurch-parser-docs.css>
+	<meta name=viewport
+			content="width=device-width, initial-scale=0.8,
+			minimum-scale=0.8, maximum-scale=10">
+	</head>
+<body>
+
+<div id="wrapper">
+
+<nav>
+	<h1>LurchMath</h1>
+
+	<div id="links">
+		<a href="#about">about</a>
+		<a href="#features">features</a>
+		<a href="#examples">examples</a>
+		<a href="#precedence">precedence</a>
+	</div>
+</nav>
+
+<article>
+<section id="about">
+	<h2>About</h2>
+
+	<p>LurchMath is an easy-to-write markup language for mathematics.<br/> 
+    It extends a proper subset of <a href="https://asciimath.org" target="_blank">AsciiMath</a>, $\LaTeX$, and CAS software in natural ways.<br/>
+    It is currently under development, and more features will be added in the future.
+  </p>
+
+	<div class="fullColumn">
+		<label for="source">Input:</label>
+		<br/>
+
+		<textarea class="ioArea" id="source" onchange="()=>{ 
+      updateRender(this.value) }">sum i=1 to n of i^3 = ((n*(n+1))/2)^2</textarea>
+	</div>
+
+	<div class="fullColumn">
+		<label for="rendered">Rendering:</label>
+		<br/>
+
+		<div class="ioArea" id="rendered">
+		</div>
+	</div>
+
+  <div class="fullColumn">
+    <label for="meaning">Meaning:</label>
+    <br/>
+  
+    <div class="ioArea" id="meaning">
+    </div>
+  </div>
+</section>
+
+<section id="features">
+<h2>Features</h2>
+
+  <p>LurchMath currently supports a small subset of AsciiMath, $\LaTeX$, and notation found in CAS software. Many symbols can be displayed using a TeX command but a preceeding backslash is not required.</p>
+
+  <p>Symbols can be more than one character long, are case sensitive, contain only letters and digits, cannot start with a digit, and cannot be a reserved term. Multiplication must be explicitly entered with <code>⋅</code>, <code>cdot</code> or <code>*</code>.</p>
+
+  <p>English phrases such as <code>Given</code> or <code>declare</code> are case sensitive and will produce LaTeX with the same phrase in the same case. Spaces within an expression are usually ignored and can be used for legibility.  The main exception is that there cannot be any spaces between a function and the parentheses containing its arguments in a function application expression.</p>
+
+  <p>A comma separated sequence preceeded by one of the <code>Given</code> keywords has the same effect as saying that each of them is a <code>Given</code> individually. The shortcut declaration <code>Let x in A</code> has the same meaning as <code>Let x be such that x in A</code>. The shortcut declaration <code>P(x) for some x in A</code> has the same meaning as <code>P(x) and x in A for some x</code>.</p>
+  
+  <p>To declared the set operator $\{\ \}$ as a global constant use <code>Declare set</code>. To declare the ordered pair, triple, or tuple operator $\langle\ \rangle$ as a constant use <code>Declare tuple</code>.</p>
+
+</section>
+
+
+<section id="examples"></section>
+<h2>Examples</h2>
+
+<table>
+    <thead>
+    <tr>
+    	<th>If you type any of these</th>
+      <th>it renders as this</th>
+    </tr>
+  </thead>
+  <tbody>
+    
+<tr><td colspan="2" class="subheader">Propositional logic</td></tr>
+<tr>
+          <td>P iff Q<br/>P ⇔ Q</td>
+          <td>$P\Leftrightarrow Q$</td>
+        </tr>
+<tr>
+          <td>P implies Q<br/>P ⇒ Q</td>
+          <td>$P\Rightarrow Q$</td>
+        </tr>
+<tr>
+          <td>P or Q</td>
+          <td>$P\text{ or }Q$</td>
+        </tr>
+<tr>
+          <td>P vee Q<br/>P ∨ Q</td>
+          <td>$P\vee Q$</td>
+        </tr>
+<tr>
+          <td>P and Q</td>
+          <td>$P\text{ and }Q$</td>
+        </tr>
+<tr>
+          <td>P wedge Q<br/>P ∧ Q</td>
+          <td>$P\wedge Q$</td>
+        </tr>
+<tr>
+          <td>not P</td>
+          <td>$\text{not } P$</td>
+        </tr>
+<tr>
+          <td>neg P<br/>¬P</td>
+          <td>$\neg P$</td>
+        </tr>
+
+<tr><td colspan="2" class="subheader">Quantifiers and bindings</td></tr>
+<tr>
+          <td>forall x.x leq x+1<br/>for all x.x leq x+1<br/>∀x.x leq x+1</td>
+          <td>$\forall x.\, x\leq x+1$</td>
+        </tr>
+<tr>
+          <td>exists x.x=2 cdot x<br/>∃x.x=2⋅x</td>
+          <td>$\exists x.\, x=2\cdot x$</td>
+        </tr>
+<tr>
+          <td>exists unique x.x=2*x<br/>∃!x.x=2⋅x</td>
+          <td>$\exists! x.\, x=2\cdot x$</td>
+        </tr>
+<tr>
+          <td>x.x+2<br/>x mapsto x+2<br/>x↦x+2</td>
+          <td>$x.\, x+2$</td>
+        </tr>
+
+<tr><td colspan="2" class="subheader">Relations</td></tr>
+<tr>
+          <td>f : A to B</td>
+          <td>$f\colon A\to B$</td>
+        </tr>
+<tr>
+          <td>a cong b mod m<br/>a = b mod m</td>
+          <td>$a\underset{m}{\equiv}b$</td>
+        </tr>
+<tr>
+          <td>25 cong 13 mod 6</td>
+          <td>$25\underset{6}{\equiv}13$</td>
+        </tr>
+<tr>
+          <td>a subgroup b<br/>a sqsubseteq b<br/>a ⊑ b</td>
+          <td>$a\sqsubseteq b$</td>
+        </tr>
+<tr>
+          <td>K is a subgroup of G</td>
+          <td>$K\text{ is a subgroup of }G$</td>
+        </tr>
+<tr>
+          <td>K is not a subgroup of G</td>
+          <td>$K\text{ is not a subgroup of }G$</td>
+        </tr>
+<tr>
+          <td>a normal b<br/>a ⊴ b</td>
+          <td>$a\trianglelefteq b$</td>
+        </tr>
+<tr>
+          <td>N is a normal subgroup of G</td>
+          <td>$N\text{ is a normal subgroup of }G$</td>
+        </tr>
+<tr>
+          <td>N is not a normal subgroup of G</td>
+          <td>$N\text{ is not a normal subgroup of }G$</td>
+        </tr>
+<tr>
+          <td>a in b<br/>a ∈ b</td>
+          <td>$a\in b$</td>
+        </tr>
+<tr>
+          <td>x is an element of S</td>
+          <td>$x\text{ is an element of }S$</td>
+        </tr>
+<tr>
+          <td>x is not an element of S</td>
+          <td>$x\text{ is not an element of }S$</td>
+        </tr>
+<tr>
+          <td>⟨x,y⟩ in ~</td>
+          <td>$\left\langle{x,y}\right\rangle\in \sim$</td>
+        </tr>
+<tr>
+          <td>a notin b<br/>a ∉ b</td>
+          <td>$a\notin b$</td>
+        </tr>
+<tr>
+          <td>a neq b<br/>a ne b<br/>a ≠ b</td>
+          <td>$a\neq b$</td>
+        </tr>
+<tr>
+          <td>x neq 0</td>
+          <td>$x\neq 0$</td>
+        </tr>
+<tr>
+          <td>P is a partition of S</td>
+          <td>$P\text{ is a partition of }S$</td>
+        </tr>
+<tr>
+          <td>P is not a partition of S</td>
+          <td>$P\text{ is not a partition of }S$</td>
+        </tr>
+<tr>
+          <td>R is a relation on A</td>
+          <td>$R\text{ is a relation on }A$</td>
+        </tr>
+<tr>
+          <td>R is not a relation on A</td>
+          <td>$R\text{ is not a relation on }A$</td>
+        </tr>
+<tr>
+          <td>A is a subset of B</td>
+          <td>$A\text{ is a subset of }B$</td>
+        </tr>
+<tr>
+          <td>A is not a subset of B</td>
+          <td>$A\text{ is not a subset of }B$</td>
+        </tr>
+<tr>
+          <td>d is a divisor of n</td>
+          <td>$d\text{ is a divisor of }n$</td>
+        </tr>
+<tr>
+          <td>d is not a divisor of n</td>
+          <td>$d\text{ is not a divisor of }n$</td>
+        </tr>
+<tr>
+          <td>a ~ b</td>
+          <td>$a\sim b$</td>
+        </tr>
+<tr>
+          <td>a ~_(u) b</td>
+          <td>$a\sim_{u}b$</td>
+        </tr>
+<tr>
+          <td>a approx b<br/>a ≈ b</td>
+          <td>$a\approx b$</td>
+        </tr>
+<tr>
+          <td>a approx_(u) b</td>
+          <td>$a\approx_{u}b$</td>
+        </tr>
+<tr>
+          <td>a sim b</td>
+          <td>$a\sim b$</td>
+        </tr>
+<tr>
+          <td>a rel b</td>
+          <td>$a\backsim b$</td>
+        </tr>
+<tr>
+          <td>a rel_(u) b</td>
+          <td>$a\backsim_{u}b$</td>
+        </tr>
+<tr>
+          <td>a =_(u) b</td>
+          <td>$a=_{u}b$</td>
+        </tr>
+<tr>
+          <td>a loves b</td>
+          <td>$a\text{ loves }b$</td>
+        </tr>
+<tr>
+          <td>a love b</td>
+          <td>$a\text{ love }b$</td>
+        </tr>
+<tr>
+          <td>a fears b</td>
+          <td>$a\text{ fears }b$</td>
+        </tr>
+<tr>
+          <td>a fear b</td>
+          <td>$a\text{ fear }b$</td>
+        </tr>
+<tr>
+          <td>a does not love b</td>
+          <td>$a\text{ does not love }b$</td>
+        </tr>
+<tr>
+          <td>a does not fear b</td>
+          <td>$a\text{ does not fear }b$</td>
+        </tr>
+<tr>
+          <td>a is not b</td>
+          <td>$a\text{ is not }b$</td>
+        </tr>
+<tr>
+          <td>a is not an b</td>
+          <td>$a\text{ is not an }b$</td>
+        </tr>
+<tr>
+          <td>a is not a b</td>
+          <td>$a\text{ is not a }b$</td>
+        </tr>
+<tr>
+          <td>a are not b</td>
+          <td>$a\text{ are not }b$</td>
+        </tr>
+<tr>
+          <td>a is b</td>
+          <td>$a\text{ is }b$</td>
+        </tr>
+<tr>
+          <td>a is an b</td>
+          <td>$a\text{ is an }b$</td>
+        </tr>
+<tr>
+          <td>a is a b</td>
+          <td>$a\text{ is a }b$</td>
+        </tr>
+<tr>
+          <td>a is the b</td>
+          <td>$a\text{ is the }b$</td>
+        </tr>
+<tr>
+          <td>a are b</td>
+          <td>$a\text{ are }b$</td>
+        </tr>
+<tr>
+          <td>⊆ is transitive</td>
+          <td>$\subseteq\text{ is }\text{transitive}$</td>
+        </tr>
+
+<tr><td colspan="2" class="subheader">Transitive chains</td></tr>
+<tr>
+          <td>x=y</td>
+          <td>$x=y$</td>
+        </tr>
+<tr>
+          <td>x=y=z</td>
+          <td>$x=y=z$</td>
+        </tr>
+<tr>
+          <td>a &lt; b<br/>a lt b</td>
+          <td>$a\lt b$</td>
+        </tr>
+<tr>
+          <td>a leq b<br/>a ≤ b</td>
+          <td>$a\leq b$</td>
+        </tr>
+<tr>
+          <td>1 &lt; 2 = 1+1 leq 3</td>
+          <td>$1\lt 2=1+1\leq 3$</td>
+        </tr>
+<tr>
+          <td>a cong_(m) b</td>
+          <td>$a\underset{m}{\equiv}b$</td>
+        </tr>
+<tr>
+          <td>a cong_(m) b cong_(m) c</td>
+          <td>$a\underset{m}{\equiv}b\underset{m}{\equiv}c$</td>
+        </tr>
+<tr>
+          <td>a cong b<br/>a ≅ b</td>
+          <td>$a\cong b$</td>
+        </tr>
+<tr>
+          <td>a | b</td>
+          <td>$a\mid b$</td>
+        </tr>
+<tr>
+          <td>a divides b</td>
+          <td>$a\text{ divides }b$</td>
+        </tr>
+<tr>
+          <td>2 | 4 | 8</td>
+          <td>$2\mid 4\mid 8$</td>
+        </tr>
+<tr>
+          <td>a subseteq b<br/>a subset b<br/>a ⊆ b</td>
+          <td>$a\subseteq b$</td>
+        </tr>
+<tr>
+          <td>A ⊆ A ∪ B ⊆ S</td>
+          <td>$A\subseteq A\cup B\subseteq S$</td>
+        </tr>
+
+<tr><td colspan="2" class="subheader">Sequents</td></tr>
+<tr>
+          <td>A ⊢ B<br/>A vdash B<br/>A proves B</td>
+          <td>$A\vdash B$</td>
+        </tr>
+<tr>
+          <td>(⊢ B)<br/>(vdash B)</td>
+          <td>$\left(\vdash B\right)$</td>
+        </tr>
+<tr>
+          <td>(A, B ⊢ C)</td>
+          <td>$\left(A, B\vdash C\right)$</td>
+        </tr>
+<tr>
+          <td>(A, B ⊢ C, D)</td>
+          <td>$\left(A, B\vdash C, D\right)$</td>
+        </tr>
+<tr>
+          <td>A ⊢_(Gamma) B</td>
+          <td>$A\vdash_{\Gamma} B$</td>
+        </tr>
+<tr>
+          <td>not (A ⊢ B)<br/>A does not prove B</td>
+          <td>$\text{not } \left(A\vdash B\right)$</td>
+        </tr>
+
+<tr><td colspan="2" class="subheader">Set and algebraic operators</td></tr>
+<tr>
+          <td>A setminus B<br/>A ∖ B</td>
+          <td>$A\setminus B$</td>
+        </tr>
+<tr>
+          <td>A times B<br/>A cross B<br/>A × B</td>
+          <td>$A\times B$</td>
+        </tr>
+<tr>
+          <td>A cup B<br/>A union B<br/>A ∪ B</td>
+          <td>$A\cup B$</td>
+        </tr>
+<tr>
+          <td>A cap B<br/>A intersect B<br/>A ∩ B</td>
+          <td>$A\cap B$</td>
+        </tr>
+<tr>
+          <td>f circ g<br/>f comp g<br/>f ∘ g</td>
+          <td>$f\circ g$</td>
+        </tr>
+<tr>
+          <td>n choose k</td>
+          <td>$\binom{n}{k}$</td>
+        </tr>
+<tr>
+          <td>(n+1) choose (k-1)</td>
+          <td>$\binom{n+1}{k-1}$</td>
+        </tr>
+<tr>
+          <td>a + b</td>
+          <td>$a+b$</td>
+        </tr>
+<tr>
+          <td>a - b</td>
+          <td>$a-b$</td>
+        </tr>
+<tr>
+          <td>a ⋅ b<br/>a cdot b<br/>a * b</td>
+          <td>$a\cdot b$</td>
+        </tr>
+<tr>
+          <td>a / b</td>
+          <td>$\frac{a}{b}$</td>
+        </tr>
+<tr>
+          <td>a ★ b<br/>a star b</td>
+          <td>$a \star  b$</td>
+        </tr>
+<tr>
+          <td>a ⊕ b<br/>a oplus b</td>
+          <td>$a \oplus  b$</td>
+        </tr>
+<tr>
+          <td>x oplus_(n) y</td>
+          <td>$x\oplus_{n}y$</td>
+        </tr>
+<tr>
+          <td>a ⊗ b<br/>a otimes b</td>
+          <td>$a \otimes  b$</td>
+        </tr>
+<tr>
+          <td>a ⊙ b<br/>a odot b</td>
+          <td>$a \odot  b$</td>
+        </tr>
+
+<tr><td colspan="2" class="subheader">Big operators</td></tr>
+<tr>
+          <td>sum(f, k, a, b)<br/>sum k = a to b of f</td>
+          <td>$\displaystyle\sum_{k=a}^{b} f$</td>
+        </tr>
+<tr>
+          <td>sum(3*k, k, 2, 5)<br/>sum k = 2 to 5 of 3*k</td>
+          <td>$\displaystyle\sum_{k=2}^{5} 3\cdot k$</td>
+        </tr>
+<tr>
+          <td>sum k to b of f</td>
+          <td>$\displaystyle\sum_{k=0}^{b} f$</td>
+        </tr>
+<tr>
+          <td>sum k in S of f<br/>sum of f for k in S</td>
+          <td>$\displaystyle\sum_{k\in S} f$</td>
+        </tr>
+<tr>
+          <td>sum of 3*k for k in A</td>
+          <td>$\displaystyle\sum_{k\in A} 3\cdot k$</td>
+        </tr>
+<tr>
+          <td>int(f, x, a, b)<br/>integral(f, x, a, b)<br/>int x = a to b of f<br/>integral x = a to b of f<br/>defint(f, x, a, b)</td>
+          <td>$\displaystyle\int_{a}^{b} f\,\mathrm{d}x$</td>
+        </tr>
+<tr>
+          <td>int x to b of f<br/>integral x to b of f</td>
+          <td>$\displaystyle\int_{0}^{b} f\,\mathrm{d}x$</td>
+        </tr>
+<tr>
+          <td>int x = 0 to 2 of x^2</td>
+          <td>$\displaystyle\int_{0}^{2} {x}^{2}\,\mathrm{d}x$</td>
+        </tr>
+<tr>
+          <td>int(f, x)<br/>integral(f, x)<br/>int f dx<br/>integral f dx</td>
+          <td>$\displaystyle\int f\,\mathrm{d}x$</td>
+        </tr>
+<tr>
+          <td>int x^2 dx</td>
+          <td>$\displaystyle\int {x}^{2}\,\mathrm{d}x$</td>
+        </tr>
+<tr>
+          <td>product(f, k, a, b)</td>
+          <td>$\displaystyle\prod_{k=a}^{b} f$</td>
+        </tr>
+<tr>
+          <td>product(k^2, k, 1, n)</td>
+          <td>$\displaystyle\prod_{k=1}^{n} {k}^{2}$</td>
+        </tr>
+<tr>
+          <td>Union(B, k, S)<br/>Cup(B, k, S)<br/>bigcup(B, k, S)<br/>Union k in S of B<br/>Cup k in S of B<br/>bigcup k in S of B<br/>Union of B for k in S<br/>Cup of B for k in S<br/>bigcup of B for k in S</td>
+          <td>$\displaystyle\bigcup_{k\in S} B$</td>
+        </tr>
+<tr>
+          <td>Union k in A of B(k)</td>
+          <td>$\displaystyle\bigcup_{k\in A} B\left(k\right)$</td>
+        </tr>
+<tr>
+          <td>Intersect(B, k, S)<br/>Cap(B, k, S)<br/>bigcap(B, k, S)<br/>Intersect k in S of B<br/>Cap k in S of B<br/>bigcap k in S of B<br/>Intersect of B for k in S<br/>Cap of B for k in S<br/>bigcap of B for k in S</td>
+          <td>$\displaystyle\bigcap_{k\in S} B$</td>
+        </tr>
+
+<tr><td colspan="2" class="subheader">Delimited forms</td></tr>
+<tr>
+          <td>[ G : H ]<br/>index(G,H)</td>
+          <td>$\left[G\mathbin{:}H\right]$</td>
+        </tr>
+<tr>
+          <td>⌊ x ⌋<br/>floor(x)</td>
+          <td>$\left\lfloor x\right\rfloor$</td>
+        </tr>
+<tr>
+          <td>⌈ x ⌉<br/>ceiling(x)</td>
+          <td>$\left\lceil x\right\rceil$</td>
+        </tr>
+
+<tr><td colspan="2" class="subheader">Constants and phrases</td></tr>
+<tr>
+          <td>ℕ<br/>NN</td>
+          <td>$\mathbb{N}$</td>
+        </tr>
+<tr>
+          <td>ℤ<br/>ZZ</td>
+          <td>$\mathbb{Z}$</td>
+        </tr>
+<tr>
+          <td>ℚ<br/>QQ</td>
+          <td>$\mathbb{Q}$</td>
+        </tr>
+<tr>
+          <td>ℝ<br/>RR</td>
+          <td>$\mathbb{R}$</td>
+        </tr>
+<tr>
+          <td>ℂ<br/>CC</td>
+          <td>$\mathbb{C}$</td>
+        </tr>
+<tr>
+          <td>𝕀<br/>II</td>
+          <td>$\mathbb{I}$</td>
+        </tr>
+<tr>
+          <td>𝕆<br/>OO</td>
+          <td>$\mathbb{O}$</td>
+        </tr>
+<tr>
+          <td>infty<br/>infinity</td>
+          <td>$\infty$</td>
+        </tr>
+<tr>
+          <td>sigma</td>
+          <td>$\sigma$</td>
+        </tr>
+<tr>
+          <td>→←<br/>contradiction</td>
+          <td>$\rightarrow\leftarrow$</td>
+        </tr>
+<tr>
+          <td>equivalenceRelation<br/>equivalence relation</td>
+          <td>$\text{equivalence relation}$</td>
+        </tr>
+<tr>
+          <td>strictPartialOrder<br/>strict partial order</td>
+          <td>$\text{strict partial order}$</td>
+        </tr>
+<tr>
+          <td>partialOrder<br/>partial order</td>
+          <td>$\text{partial order}$</td>
+        </tr>
+<tr>
+          <td>totalOrder<br/>total order</td>
+          <td>$\text{total order}$</td>
+        </tr>
+<tr>
+          <td>topSpace<br/>topological space</td>
+          <td>$\text{topological space}$</td>
+        </tr>
+<tr>
+          <td>AlgebraRule<br/>"algebra rule"<br/>algebra rule</td>
+          <td>$\text{algebra rule}$</td>
+        </tr>
+<tr>
+          <td>ChainsRule<br/>"chains rule"<br/>chains rule</td>
+          <td>$\text{chains rule}$</td>
+        </tr>
+<tr>
+          <td>EquationsRule<br/>"equations rule"<br/>equations rule</td>
+          <td>$\text{equations rule}$</td>
+        </tr>
+
+<tr><td colspan="2" class="subheader">Algebraic expressions</td></tr>
+<tr>
+          <td>(x)</td>
+          <td>$\left(x\right)$</td>
+        </tr>
+<tr>
+          <td>2+x+y</td>
+          <td>$2+x+y$</td>
+        </tr>
+<tr>
+          <td>-x</td>
+          <td>$-x$</td>
+        </tr>
+<tr>
+          <td>1-x</td>
+          <td>$1-x$</td>
+        </tr>
+<tr>
+          <td>1/x</td>
+          <td>$\frac{1}{x}$</td>
+        </tr>
+<tr>
+          <td>2*1/x*y</td>
+          <td>$2\cdot \frac{1}{x}\cdot y$</td>
+        </tr>
+<tr>
+          <td>(2*1)/(x*y)</td>
+          <td>$\frac{2\cdot 1}{x\cdot y}$</td>
+        </tr>
+<tr>
+          <td>x^2</td>
+          <td>${x}^{2}$</td>
+        </tr>
+<tr>
+          <td>x factorial<br/>x!</td>
+          <td>$x!$</td>
+        </tr>
+<tr>
+          <td>multinomial(m,n)</td>
+          <td>$\left(m,n\right)$</td>
+        </tr>
+<tr>
+          <td>abs((1-x)/(1+x))</td>
+          <td>$\left| \frac{1-x}{1+x} \right|$</td>
+        </tr>
+<tr>
+          <td>x star y star z</td>
+          <td>$x \star  y \star  z$</td>
+        </tr>
+<tr>
+          <td>Fib_(n+2)</td>
+          <td>$F_{n+2}$</td>
+        </tr>
+
+<tr><td colspan="2" class="subheader">Sets, functions, and tuples</td></tr>
+<tr>
+          <td>{a,b,c}<br/>set(a,b,c)</td>
+          <td>$\left\{\,a,b,c\,\right\}$</td>
+        </tr>
+<tr>
+          <td>{ p:p is prime}<br/>set(p:p is prime)</td>
+          <td>$\left\{\,p:\,p\text{ is }\text{prime}\right\}$</td>
+        </tr>
+<tr>
+          <td>A'<br/>A complement<br/>A°</td>
+          <td>${A}'$</td>
+        </tr>
+<tr>
+          <td>powerset(A)<br/>𝒫(A)</td>
+          <td>$\mathscr{P}\left(A\right)$</td>
+        </tr>
+<tr>
+          <td>f:A→B</td>
+          <td>$f\colon A\to B$</td>
+        </tr>
+<tr>
+          <td>f(x)</td>
+          <td>$f\left(x\right)$</td>
+        </tr>
+<tr>
+          <td>f_(x)</td>
+          <td>$f_{x}$</td>
+        </tr>
+<tr>
+          <td>f_(0)(x)_(n+1)</td>
+          <td>$f_{0}\left(x\right)_{n+1}$</td>
+        </tr>
+<tr>
+          <td>[x,y]<br/>pair(x,y)<br/>tuple(x,y)<br/>⟨x,y⟩</td>
+          <td>$\left\langle{x,y}\right\rangle$</td>
+        </tr>
+<tr>
+          <td>[x,y,z]<br/>triple(x,y,z)<br/>tuple(x,y,z)<br/>⟨x,y,z⟩</td>
+          <td>$\left\langle{x,y,z}\right\rangle$</td>
+        </tr>
+<tr>
+          <td>[w,x,y,z]<br/>tuple(w,x,y,z)<br/>⟨w,x,y,z⟩</td>
+          <td>$\left\langle{w,x,y,z}\right\rangle$</td>
+        </tr>
+<tr>
+          <td>[[1,2],[3,4]]</td>
+          <td>$\left[\begin{matrix}
+ 1 & 2 \\
+ 3 & 4
+\end{matrix}\right]$</td>
+        </tr>
+<tr>
+          <td>[x,y]'</td>
+          <td>$\left[\begin{matrix}
+ x \\
+ y
+\end{matrix}\right]$</td>
+        </tr>
+<tr>
+          <td>[x,y,z]'</td>
+          <td>$\left[\begin{matrix}
+ x \\
+ y \\
+ z
+\end{matrix}\right]$</td>
+        </tr>
+<tr>
+          <td>[[1,2,3],[4,5,6]]'</td>
+          <td>$\left[\begin{matrix}
+ 1 & 4 \\
+ 2 & 5 \\
+ 3 & 6
+\end{matrix}\right]$</td>
+        </tr>
+<tr>
+          <td>class(a)</td>
+          <td>$\left[a\right]$</td>
+        </tr>
+<tr>
+          <td>class(a,~)</td>
+          <td>$\left[a\right]_{\sim}$</td>
+        </tr>
+
+<tr><td colspan="2" class="subheader">Assumptions and Declarations (case insensitive, phrase is echoed)</td></tr>
+<tr>
+          <td>Assume P<br/>Given P<br/>From P<br/>Suppose P<br/>If P<br/>Define P<br/>:P</td>
+          <td>$\text{Assume } P$</td>
+        </tr>
+<tr>
+          <td>Let x</td>
+          <td>$\text{Let }x$</td>
+        </tr>
+<tr>
+          <td>Let x in A</td>
+          <td>$\text{Let }x\in A$</td>
+        </tr>
+<tr>
+          <td>Let x be such that x in RR<br/>Let x such that x in RR</td>
+          <td>$\text{Let }x\text{ be such that } x\in \mathbb{R}$</td>
+        </tr>
+<tr>
+          <td>Let x in RR be such that 0 leq x</td>
+          <td>$\text{Let }x\in \mathbb{R}\text{ be such that } 0\leq x$</td>
+        </tr>
+<tr>
+          <td>f(c)=0 for some c</td>
+          <td>$f\left(c\right)=0\text{ for some }c$</td>
+        </tr>
+<tr>
+          <td>f(c)=0 for some c in A</td>
+          <td>$f\left(c\right)=0\text{ for some }c\in A$</td>
+        </tr>
+<tr>
+          <td>Declare is, 0, +, cos</td>
+          <td>$\text{Declare } \text{is}\text{, }0\text{, }+\text{, }\textcolor{black}{\text{and }}\text{cos}$</td>
+        </tr>
+
+<tr><td colspan="2" class="subheader">Mentioning an operator as a symbol (any operator name or glyph)</td></tr>
+<tr>
+          <td>(star)<br/>'star'</td>
+          <td>$\left(\star\right)$</td>
+        </tr>
+<tr>
+          <td>(subset)<br/>'⊆'</td>
+          <td>$\left(\subseteq\right)$</td>
+        </tr>
+<tr>
+          <td>oplus(x,y)<br/>'⊕'(x,y)<br/>(⊕)(x,y)</td>
+          <td>$\oplus\left(x,y\right)$</td>
+        </tr>
+<tr>
+          <td>~ is reflexive<br/>'~' is reflexive</td>
+          <td>$\sim\text{ is }\text{reflexive}$</td>
+        </tr>
+<tr>
+          <td>⟨x,y⟩ in '~'<br/>⟨x,y⟩ in ~</td>
+          <td>$\left\langle{x,y}\right\rangle\in \sim$</td>
+        </tr>
+<tr>
+          <td>star is associative</td>
+          <td>$\star\text{ is }\text{associative}$</td>
+        </tr>
+<tr>
+          <td>oplus is associative</td>
+          <td>$\oplus\text{ is }\text{associative}$</td>
+        </tr>
+<tr>
+          <td>otimes is associative</td>
+          <td>$\otimes\text{ is }\text{associative}$</td>
+        </tr>
+<tr>
+          <td>odot is associative</td>
+          <td>$\odot\text{ is }\text{associative}$</td>
+        </tr>
+<tr>
+          <td>'~' is an equivalence relation</td>
+          <td>$\sim\text{ is an }\text{equivalence relation}$</td>
+        </tr>
+<tr>
+          <td>'~' is a strict partial order</td>
+          <td>$\sim\text{ is a }\text{strict partial order}$</td>
+        </tr>
+<tr>
+          <td>'~' is a partial order</td>
+          <td>$\sim\text{ is a }\text{partial order}$</td>
+        </tr>
+<tr>
+          <td>'~' is a total order</td>
+          <td>$\sim\text{ is a }\text{total order}$</td>
+        </tr>
+
+<tr><td colspan="2" class="subheader">Miscellaneous</td></tr>
+<tr>
+          <td>1.23[456]</td>
+          <td>$1.23\overline{456}$</td>
+        </tr>
+<tr>
+          <td>x^-<br/>x⁻</td>
+          <td>${x}^{-}$</td>
+        </tr>
+<tr>
+          <td>@P(k)<br/>𝜆P(k)</td>
+          <td>$\mathcal{P}\left(k\right)$</td>
+        </tr>
+
+  </tbody>
+</table>
+</section>
+
+
+<section id="precedence"></section>
+<h2>Precedence</h2>
+
+<p>The precedence of operations from highest to lowest are given in the following table. There are a few fine points to be aware of.</p>
+  <ul>
+    <li>Exponentiation has higher precedence than function application.  That is normally what is expected for something like $f^2(x)$ or $f^\text{inv}(S)$ but might not be what is expected for something like $z^{\sigma(n)}$.  The first two can be typed as you would expect <code>f^2(S)</code> and <code>f^inv(x)</code> while the latter would be entered as <br/><code>z^(sigma(x))</code>.</li>
+    <li>Summation has precedence higher than addition but lower than multiplication. Thus, <br/><code>sum k to n f(k) + 2</code> is interpreted as $\left(\sum_{k=0}^n f(k)\right)+2$, whereas <code>sum k to n (f(k) + 2)</code> is interpreted as $\sum_{k=0}^n \left(f(k)+2\right)$.
+    </li>
+  </ul>
+<table id="precedence">
+    <thead>
+    <tr>
+    	<th>Precedence (high to low)</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td>parentheses $(~~)$, tuples $\langle~~\rangle$, equivalence classes $[~~]$, symbols, numbers</td></tr>
+    <tr><td>exponentials $\left(x^2\right)$</td></tr>
+    <tr><td>function application $\left(f_0(x,y)(z)\right)$</td></tr>
+    <tr><td>postfix ($n!$, $f'$)</td></tr>
+    <tr><td>abstract infix operators ($\star$, $\oplus$, $\otimes$, $\odot$)</td></tr>
+    <tr><td>negation ($-x$), reciprocal ($1/2$)</td></tr>
+    <tr><td>product ($2\cdot x$)</td></tr>
+    <tr><td>summation $\left(\sum_{k=0}^n f(k)\right)$</td></tr>
+    <tr><td>indexed union and intersection $\left(\bigcup_{i \in \mathbb{N}} A_{i}\right)$</td></tr>
+    <tr><td>sum ($x+y-1$)</td></tr>
+    <tr><td>choose $\binom{m+n}{m}$</td></tr>
+    <tr><td>composition $\left(g\circ f\right)$</td></tr>
+    <tr><td>intersection ($A\cap B$)</td></tr>
+    <tr><td>union ($A\cup B$)</td></tr>
+    <tr><td>cartesian product ($A\times B$)</td></tr>
+    <tr><td>relative complement ($A\setminus B$)</td></tr>
+    <tr><td>relations ($f:A\to B$, $\underset{m}{\equiv}$, $\subseteq$, $\in$, $\notin$, $\mid$, $\leq$, $\lt$, $=$, $\neq$, $\sim$, 'is', 'loves')</td></tr>
+    <tr><td>not ($\neg$)</td></tr>
+    <tr><td>and ($\wedge$)</td></tr>
+    <tr><td>or ($\vee$)</td></tr>
+    <tr><td>implies ($\Rightarrow$)</td></tr>
+    <tr><td>iff ($\Leftrightarrow$)</td></tr>
+    <tr><td>binding ($x.P(x)$)</td></tr>
+    <tr><td>quantified ($\forall x.P(x)$)</td></tr>
+    <tr><td>declarations ('Declare', 'Let', 'for some')</td></tr>
+    <tr><td>environment $\{~\}$</td></tr>    
+  </tbody>
+</table>
+</section>
+
+
+</article>
+</div>
+
+</body>
+</html>

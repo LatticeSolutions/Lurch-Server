@@ -1,0 +1,21 @@
+{
+  :{
+    (Arithmetic ℕ)
+        +{"_id":"2"}
+        +{"lurchNotation":"Arithmetic(NN)"}
+  }
+      +{"_id":"1"}
+      +{"_type_Rule":true}
+  (= (+ 1 1) x)
+      +{"ExpectedResult":"inapplicable"}
+      +{"_id":"3"}
+      +{"lurchNotation":"1+1=x"}
+  by
+      +{"_id":"4"}
+      +{"lurchNotation":"by arithmetic"}
+  arithmetic
+      +{"_id":"5"}
+      +{"lurchNotation":"by arithmetic"}
+}
+    +{"_id":"documentEnvironment"}
+    +{"instantiateEverything":false}

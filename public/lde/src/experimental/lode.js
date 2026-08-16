@@ -1,0 +1,1026 @@
+/**
+ * Lode is the Lurch Node app. It defines a node REPL which has all of the Lurch
+ * LDE brains loaded. For details see the [Lode tutorial](@tutorial Lurch Node REPL).
+ *
+ * @module Lode
+ */
+//////////////////////////////////////////////////////////////////////////////
+//
+// LurchNode (Lode)
+//
+// Description: This allows us to define a node REPL which has all
+//              of the lurch LDE brains loaded.
+//
+// Syntax: at the bash prompt type "node lode" where lode.js is this file,
+//         assuming the current directory is the directory containing
+//         the file.
+//
+///////////////////////////////////////////////////////////////////////////////
+
+///////////////////////////////////////////////////////////////////////////////
+// Imports
+//
+// NOTE: all imports must be at the top of the file
+
+// REPL and file system utilities (non-Lurch modules)
+
+import repl from 'node:repl'
+import os from 'node:os'
+import path from 'node:path'
+import fs from 'node:fs'
+// import fs, { write } from 'node:fs'
+// import readline from 'node:readline'
+import { execSync } from 'node:child_process'
+import util from 'node:util'
+import peggy from 'peggy'
+import yaml from 'js-yaml'
+import mdIt from 'markdown-it'
+import spans from 'markdown-it-bracketed-spans'
+import attrs from 'markdown-it-attrs'
+import deflist from 'markdown-it-deflist'
+import divs from 'markdown-it-div'
+global.md = mdIt({ html: true })
+  .use(attrs)
+  .use(spans)
+  .use(deflist)
+  .use(divs)
+
+import * as prettier from 'prettier'
+global.prettier = x => prettier.format(x,{ parser: 'html' })
+import { XMLParser } from 'fast-xml-parser'
+global.xml = (s) => new XMLParser({ ignoreAttributes:false }).parse(s)
+// import asciimath2latex from './parsers/asciimath-to-latex.js'
+import { latexToLurch } from './parsers/tex-to-lurch.js'
+
+// import * as MathLive from 'mathlive'
+// import { getConverter } from './utils/math-live.js'
+// import katex from 'katex'
+// import mathjax from 'mathjax'
+// import React from 'react'
+
+// In LODE we have no need for EventTarget because we don't edit MCs in real
+// time and react to changes.  Importing this BEFORE importing math-concept.js
+// disables that.  This keeps the size and complexity of LCs simpler and avoids
+// spamming 'inspect' reports.
+//
+// NOTE: do not import any lurch modules above this point (in case they load
+// something that loads MathConcept first before we get a chance to import the
+// following).
+import './disable-event-target.js'
+// with that disabled, now we can load everything from index.js and other LDE tools
+import * as Lurch from '../index.js'
+import { Problem } from '../matching/problem.js'
+import CNF from '../validation/conjunctive-normal-form.js'
+import TreeIndexer from './tree-indexer.js'
+import { addLurchIndices, addIndex } from './index-definitions.js'
+import { LurchOptions } from './lurch-options.js'
+
+// Experimental Code
+//
+// parsing
+// import { Tokenizer, Grammar } from 'earley-parser'
+// generic helper utilities
+import Utilities from './utils.js'
+// interpretation utilities
+import Interpret from './interpret.js'
+// everything in the global validation lab. 
+import Compact from './global-validation.js'
+// load the custom formatters and reporting tools
+import Reporting from './reporting.js' 
+// import the parsing utiltiies (processShorthands comes from Interpret)
+import ParsingTools from './parsing.js'
+import { isArithmetic, isNegationOfArithmetic } from './parsing.js'
+// load the CNFProp tools for testing
+import { CNFProp } from './CNFProp.js'
+// load the Lurch to putdown parser precompiled for efficiency
+import { parse as lurchToPutdown } from './parsers/lurch-to-putdown.js'
+global.parse = (s,opts) => {
+  try { 
+    return lurchToPutdown(s,opts)
+  } catch(e) {
+    if (typeof e.format === 'function') {
+      console.log(e.format([{
+        text:s
+      }]))
+    } else {    
+      console.log(e.toString())
+    }
+    return undefined
+  }
+}
+
+// LaTeX comes from the same unified parser (Phase 2b): the tex option
+// renders the AST with ast-to-tex.js
+const lurchToTex = (s, opts = {}) => lurchToPutdown(s, { ...opts, tex: true })
+global.tex = (s,opts)  => {
+  try {
+    return lurchToTex(s,opts)
+  } catch(e) {
+    if (typeof e.format === 'function') {
+      console.log(e.format([{
+        text:s
+      }]))
+    } else {
+      console.log(e.toString())
+    }
+    return undefined
+  }
+}
+
+// return the raw AST built by the same parser (see ast-to-putdown.js for
+// the node vocabulary)
+global.ast = (s,opts) => {
+  try {
+    return lurchToPutdown(s, { ...opts, ast: true })
+  } catch(e) {
+    if (typeof e.format === 'function') {
+      console.log(e.format([{
+        text:s
+      }]))
+    } else {
+      console.log(e.toString())
+    }
+    return undefined
+  }
+}
+
+// load the parser golden-snapshot test suite (used by the .parsertest command)
+import { runParserTests } from './parsers/parsertests.js'
+
+// load the Lurch to putdown parser precompiled for efficiency
+import { parse as lurchToPutdownTrace } from './parsers/lurch-to-putdown-trace.js'
+global.trace = (s, opts = {}) => {
+  const tracer = new CompactTracer({
+    mode: 'tree',
+    preview: true,
+    noIndent: true,
+    breakOnSpanChange: true,
+    input: s,
+    ...opts
+  })
+  try {
+    const out = lurchToPutdownTrace(s, {
+      cache: true,
+      tracer,
+      __setTraceInput: norm => { tracer.input = norm }
+    })
+    return out
+  } catch (e) {
+    if (typeof e.format === 'function') console.log(e.format([{ text: s }]))
+    else console.log(e.toString())
+    return undefined
+  }
+}
+
+// trace the same unified parser while rendering LaTeX output
+global.textrace = (s, opts = {}) => {
+  const tracer = new CompactTracer({
+    mode: 'tree',
+    preview: true,
+    noIndent: true,
+    breakOnSpanChange: true,
+    input: s,
+    ...opts
+  })
+  try {
+    const out = lurchToPutdownTrace(s, {
+      cache: true,
+      tex: true,
+      tracer,
+      __setTraceInput: norm => { tracer.input = norm }
+    })
+    return out
+  } catch (e) {
+    if (typeof e.format === 'function') console.log(e.format([{ text: s }]))
+    else console.log(e.toString())
+    return undefined
+  }
+}
+
+// trace the same unified parser and return the raw AST
+global.asttrace = (s, opts = {}) => {
+  const tracer = new CompactTracer({
+    mode: 'tree',
+    preview: true,
+    noIndent: true,
+    breakOnSpanChange: true,
+    input: s,
+    ...opts
+  })
+  try {
+    const out = lurchToPutdownTrace(s, {
+      cache: true,
+      ast: true,
+      tracer,
+      __setTraceInput: norm => { tracer.input = norm }
+    })
+    return out
+  } catch (e) {
+    if (typeof e.format === 'function') console.log(e.format([{ text: s }]))
+    else console.log(e.toString())
+    return undefined
+  }
+}
+
+// load the Lurch to LaTeX parser precompiled for efficiency
+import { makedoc } from './parsers/makedoc.js'
+// load the utility to create the site lurch file index page
+import { generatePage } from '../../../lurchmath/grading-tools/toc.js'
+// load the utility to create the site lurch file index page
+import { scrape } from '../../../lurchmath/grading-tools/scraper.js'
+// load the chalk pens globally
+import Pens from './pens.js'
+global.Pens = Pens
+// load the pegjs tracer only in Lode
+import Tracer from 'pegjs-backtrace'
+global.Tracer = Tracer
+// load my custom tracer for the parsers
+import { CompactTracer } from './parsers/tracer.js'
+global.CompactTracer = CompactTracer
+
+// External packages
+
+// load Algebrite
+import Algebrite from '../../dependencies/algebrite.js'
+
+// // load Z3 (temporarily disabled for efficiency)
+// import { init as z3init } from 'z3-solver'
+// // export this for making new Contexts if I want more than one
+// const { Context } = await z3init()
+// global.Context = Context
+// // set a default unnamed Context for Lode
+// global.Z3 = Context()
+// // the default solver for Lode
+// // 
+// // example:
+// // ▶︎ solver.add(z3.Real.const("b").neq(z3.Real.val(0)))
+// // ▶︎ solver.add(z3.Real.const("a").eq(z3.Real.const("c").div(z3.Real.const("b"))))
+// // ▶︎ solver.add(z3.Real.const("a").mul(z3.Real.const("b")).neq(z3.Real.const("c")))
+// // ▶︎ await(solver.check())
+// // unsat
+// global.solver = new Z3.Solver()
+// global.tree = x => Algebrite.run(`printlist(${x})`)
+// // and our custom utilities to support it
+// import Z3Utils from './z3.js'
+// Object.assign( global, Z3Utils )
+
+// load SAT
+import { satSolve } from '../../dependencies/LSAT.js'
+///////////////////////////////////////////////////////////////////////////////
+
+///////////////////////////////////////////////////////////////////////////////
+// Globals
+//
+// Initialize the global namespace to make the following commands available
+//
+// LDE basic code
+Object.assign( global, Lurch )
+
+// Experimental code
+Object.assign( global, Utilities )
+Object.assign( global, Interpret)
+Object.assign( global, Compact )
+Object.assign( global, Reporting )
+Object.assign( global, ParsingTools )
+global.isArithmetic = isArithmetic
+global.isNegationOfArithmetic = isNegationOfArithmetic
+global.CNF = CNF
+global.Problem = Problem
+global.CNFProp = CNFProp
+global.TreeIndexer = TreeIndexer
+global.addIndex = addIndex
+global.addLurchIndices = addLurchIndices
+
+// External packages
+global.satSolve = satSolve
+global.Algebrite = Algebrite
+global.peggy = peggy
+global.yaml = yaml.load
+global.markdown = md.render.bind(md)
+// global.Tokenizer = Tokenizer
+// global.Grammar = Grammar
+// global.MathLive = MathLive
+// global.asciimath2latex = asciimath2latex
+global.untex = latexToLurch
+// global.getConverter = getConverter
+// global.katex = katex
+// global.mathjax = mathjax
+// global.React = React
+///////////////////////////////////////////////////////////////////////////////
+
+///////////////////////////////////////////////////////////////////////////////
+// Lode Utiltities
+//
+// Custom Lode commands and utilties
+global.compute = Algebrite.run
+
+// Run terminal commands from the Lode REPL
+global.exec = command => console.log(String(execSync(command)))
+global.execStr = command => String(execSync(command))
+// like exec, but stream the output live to the terminal as it is produced
+// (for long-running commands like test suites), ignoring stdin so the child
+// cannot swallow keystrokes intended for the Lode REPL
+global.execLive = command =>
+  execSync(command, { stdio: ['ignore', 'inherit', 'inherit'] })
+global.ls = (args='') => {
+  const command = `ls -pC ${args}`
+  console.log(
+  `\n${docPen(execStr(command))}\n`)
+}
+
+// because it's easier to remember
+global.metavariable = 'Metavar'
+
+// for controlling the inspect-level for the default REPL echo
+global.Depth = Infinity
+
+// just a shorthand
+global.inspect = (x , depth=1) => console.log(util.inspect(x , {
+  customInspect: false , showHidden: false , depth: depth , colors: true
+} ) )
+
+// load an initialization file or js script and execute it
+global.initialize = function(fname='initproofs') { 
+  const init = fs.readFileSync(checkExtension(fname),{ encoding:'utf8'}) 
+  eval.apply(this,[init+'\n'])  
+}
+
+// display a proof file by filename
+global.catproof = function(fname) {
+  console.log(defaultPen(execStr(
+    `cat "${proofPath}${checkExtension(fname,'lurch')}"`)))
+}
+
+// display a library file by filename
+global.catlib = function(fname) {
+  console.log(defaultPen(execStr(
+    `cat "${libPath}${checkExtension(fname,'lurch')}"`)))
+} 
+
+// List both libs and proofs
+/** List libs, proofs, and parsers */
+const list = () => { 
+  console.log(
+  `\n${headingPen('Available Libraries:')}\n`+
+  `${docPen(execStr('cd '+libPath+';ls -pRC '))}\n`+
+  `${headingPen('Available Proofs:')}\n` +
+  `${docPen(execStr('cd '+proofPath+';ls -pRC'))}\n` +
+  `${headingPen('Available Parsers:')}\n` +
+  `${docPen(execStr('cd '+parserPath+';ls -pRC'))}`
+) }
+
+// two useful abbreviations
+global.lc = s => { 
+  const L = LogicConcept.fromPutdown(s)
+  return (L.length===1) ? L[0] : L 
+}
+global.mc = s => { 
+  const M = MathConcept.fromSmackdown(s)
+  return (M.length===1) ? M[0] : M  
+}
+global.check = s => { 
+  const doc = $(s)
+  validate(doc)  
+  return doc
+}
+// a useful utility for exploring matching
+global.matchMaker = (decl,pstr,estr) => {
+  let doc = $(`{
+    Declare ${decl}
+    Rule: :{ ${pstr} }
+    ${estr}
+  }`)
+  interpret(doc)
+  doc.report(all)
+  const p = doc.child(2,0)
+  const e = doc.child(3)
+  const ans = matchPropositions(p,e)
+  return ans.toString().split(/(?<=}),(?={)/)
+            .map( s=>s.slice(1,-1) )
+            .map( s=>s.split(/(?<=\)),(?=\()/) )
+            .map( s=>s.map( x=>x.replace(/__/g,'') ) )
+            .map( s=>s.map( x=>x.replace(/\(([^,]+),(.+)\)$/g,'$1=$2') ) )
+}
+
+/////////////////////////////////////////////////////////////////////////////
+//
+//  File handling utilities
+//
+
+// the path to library definition files
+/** 
+ * A library path 
+ */
+global.libPath = './libs/'
+
+// the path to proof definition files
+global.proofPath = './proofs/'
+
+// the path to parser definition files
+global.parserPath = './parsers/'
+
+// the file extension used by default for libraries and proof files. Don't
+// include the . here for easy use in RegExp's
+global.LurchFileExtension = 'lurch'  
+
+// the file extension used by default for libraries and proof files
+global.ParserFileExtension = 'peggy' 
+
+// check a file name to see if it has the .lurch extension and if not, add it
+global.checkLurchExtension = name => checkExtension(name , LurchFileExtension )
+
+// Load a LDE document
+//
+// Load a document string, recursively replacing included files, and wrap the
+// result in environment brackets, { }. before returning.
+//
+global.loadDoc = ( name, folder='./', extension=LurchFileExtension, 
+                   language='lurch' ) => {
+  let doc = ''                    
+  if (language=='lurch') {
+    // load the specified file with recursive substitutions for imported libs
+    doc = `{${loadDocStr( name, folder, extension )}}`
+    // convert it to putdown
+    doc = parse(doc)    
+  } else {
+    // otherwise it's putdown, most likely from exported document code from the UI
+    // do just load the file directly
+    doc = loadStr( name, folder, extension )
+  }
+  doc = lc(doc)
+  interpret(doc)
+  validate(doc)
+  return doc
+}
+
+// Load a LDE document string
+//
+// This command works just like loadStr with one difference. If the string that
+// is loaded contains a line of the form 
+//
+//    include fname
+//
+// it will load the string in fname and replace that line with the contents of
+// that file recursively checking for more include statements.  No checking is
+// done to prevent circular dependencies.
+//
+global.loadDocStr = ( name, folder='./', extension=LurchFileExtension ) => {
+  // load the specified file
+  let ans = loadStr( name, folder, extension )
+  // recursively replace all of the includes
+  const regx = /(?:^|\n)[ \t]*[iI]nclude[ \t]+([^ \t][^\n]*)(?:\n|$)/gm
+  return ans.replace(regx,(line,fname) => { return loadDocStr(fname) })
+}
+
+// Load just the string for a file and return that. You can omit the .lurch
+// extension. The second argument is the folder, which defaults to the current
+// folder. 
+global.loadStr = ( name, folder='./', extension=LurchFileExtension) => {
+  const filename = checkFolder(folder) + checkExtension(name,extension)
+  if (!fs.existsSync(filename)) {
+    console.log(`No such file or folder: ${filename}`)
+    return
+  }
+  return fs.readFileSync( filename , { encoding:'utf8'} )
+}
+
+// Convenience versions of the same thing
+global.loadLibStr = (name) => loadStr(name,libPath)
+global.loadProofStr = (name) => loadStr(name,proofPath)
+global.loadParserStr = (name) => loadStr(name,parserPath,ParserFileExtension)
+
+// load a parser by specifying it's filename, optionally compiling it first
+global.loadParser = (name) => {
+    const parserstr = loadParserStr(name)
+    return makeParser(parserstr) 
+}
+
+// a convenient way to make an lc or mc at the Lode prompt or in scripts
+global.$ = s => {
+  let parsed = parse(s)
+  return (parsed) ? lc(parsed) : undefined
+}
+global.makedoc = makedoc
+// store the folders we want to be scanned as part of the indexing page
+// relative folders are relative to the root of the server (the lurch folder 
+// of the LFY)
+global.contentFolders = ['learn/proofs/rules','assignments','math','help','mystuff']
+global.toc = () => generatePage(...contentFolders)
+global.scrape = scrape
+global.scrapeToGomez = () => 
+  exec('cd ../../..;cp scrape.txt ~/Dropbox/shared/Gomez/Lurch')
+
+// global.mathlive = MathLive.convertLatexToMarkup
+// global.html = katex.renderToString
+
+// print a string to the console with line numbers
+global.say = s => {
+  const lines = s.split('\n')
+  const lineNumberWidth = String(lines.length).length
+  lines.forEach( (line, index) => {
+    const lineNumber = linenumPen(
+      String(index + 1).padStart(lineNumberWidth, ' ')+':')
+    const coloredLine = (/^\s*\/\//.test(line)) ? instantiationPen(line) : line
+    console.log(`${lineNumber} ${coloredLine}`)
+  })
+}
+
+// Concatenate the parsed contents of the specified files in order as children
+// of a single environment and return the environment. The arguments can be
+// strings interpreted as file names relative to the experimental folder, or LCs
+// that are already constructed in Lode.
+global.catdocs = ( ...files ) => {
+  // the reserved constants are declared at the top of every document
+  // Note: we temporarily include '/' here until we can fix the bug in the 
+  // ascii peggy parser that prevents it from being Declared. 
+  const system = lc(`:[ 'LDE EFA' '➤' ]`).asA('Declare')
+  // create a temporary empty environment to hold the final answer
+  let ans = new Environment()
+  ans.pushChild(system)
+  // if no file is specified just return the system declaration
+  if ( files.length === 0 ) return ans
+  // for each file specified on the argument list, load it if necessary and
+  // add it to the answer environment
+  files.forEach( original => {
+    // create a place to store it
+    let file
+    // if it's already an LC, just make a copy
+    if (original instanceof LogicConcept) { 
+      file = original.copy() 
+      // otherwise it must be a string containing a filename, so load it  
+    } else {
+      const filestr = loadStr(original)
+      // if the file is not found it will print a message and return undefined,
+      // so just return 
+      if (!filestr) return
+      // it succeeded so convert it to an LC
+      file = $(filestr)
+    }
+    // if it's not an array, make it be one
+    if (file instanceof LogicConcept) { file = [file] }
+    // then push all of the elements onto the answer environment
+    file.forEach( x => ans.pushChild(x) )
+  } )
+  return ans
+}
+
+////////////////////////////////////////////////////////////////////////////
+//
+// Welcome splash screen
+//
+console.log(`\nWelcome to ${defaultPen("𝕃𝕠𝕕𝕖")}`+
+` - the Lurch Node app\n(type .help for help)\n`)
+
+// start a new REPL context
+//
+// Note: that we use the useGlobal parameter so the current context is shared
+// with this script.  Otherwise by importing things into the repl context we
+// ended up with errors due to there being two contexts and uncertainty about
+// which one is running what.  That's why we use global.* above to import things.
+//
+const rpl = repl.start( { 
+  ignoreUndefined: true,
+  prompt: defaultPen('▶︎')+' ',
+  useGlobal: true,
+  writer: ( expr ) => {
+    return format(expr)
+  }
+} )
+
+const historyFile = path.join(os.homedir(), '.lode_history')
+
+rpl.setupHistory(historyFile, err => {
+  if (err) console.error(`Could not load Lode history: ${err.message}`)
+})
+
+////////////////////////////////////////////////////////////////////////////
+  
+// define the .features command
+rpl.defineCommand( "features", {
+  help: "Show Lode features",
+  action() {
+    console.log( chalk.ansi256(248)(
+      `
+      ${headingPen('Lode Features')}
+      Lode is the Node.js REPL with all of the LDE modules loaded at the
+      start. If the expression echoed is an LC (resp. MC) or array of
+      those, its putdown (resp. smackdown) form is printed on the next line
+      instead of the usual default (util.inspect). In addition, it provides
+      the following.
+      
+      ${headingPen('Useful Syntactic sugar')}
+      ${itemPen('$(s)')}          : constructs an LC from the lurchmath string s
+      ${itemPen('lc(s)')}         : constructs an LC from the putdown string s
+      ${itemPen('mc(s)')}         : constructs an MC from the smackdown string s
+      ${itemPen('X.report()')}    : prints a syntax highlighted, numbered view of LC X
+                      Optional args 'all', 'show', 'detailed', 'allclean'
+                      and 'clean' (with no quotes) show variations
+      ${itemPen('X.inspect(x,d)')}: prints the object structure of X to depth d. If d
+                      is omitted the default is 1
+      ${itemPen('.list')}         : show the list of known libs and proofs
+      ${itemPen('.history')}      : show the Lode history file name
+      ${itemPen('.test')}         : run the acidtests script
+      ${itemPen('.makedocs')}     : make the jsdoc docs
+      ${itemPen('.showdocs')}     : open the jsdoc docs in the browser
+      ${itemPen('.compileparser')}: compile the parsers to js. If the argument 'true' is 
+                      present, it will compile the trace parsers as well. 
+      ${itemPen('exec(command)')} : execute the given shell commmand and print the result
+      ${itemPen('initialize()')}  : loads and executes 'initproof.js' from the scripts
+                      folder. A different file can be executed by calling 
+                      it with the optional filename, e.g. initialize('acidtests') 
+      ${itemPen('compute(s)')}    : calls Algebrite.run(s) 
+                      (see Algebrite docs at algebrite.org)')}
+      ${itemPen('benchmark()')}    : run Lode, validate some documents, then call
+                      'benchmark()' to see a report
+
+      ${headingPen('Extra Packages')}  
+      ${itemPen('Algebrite')}     : a computer algebra system (see algebrite.org)
+      ${itemPen('satSolve')}      : a boolean satisfiability program 
+                      (see www.comp.nus.edu.sg/~gregory/sat)
+      ${itemPen('chalk')}         : a Node package to colorize text output to the terminal 
+                      (see www.npmjs.com/package/chalk)
+      
+      `
+      ) )
+      this.displayPrompt()
+    }
+} )
+
+// define the Lode .list command
+rpl.defineCommand( "list", {
+  help: "List currently available Lode libraries and proofs",
+  action() { 
+    list()
+    this.displayPrompt()
+  }
+})
+
+// define the Lode .history command
+rpl.defineCommand('history', {
+  help: 'Show the Lode history file location.',
+  action() {
+    console.log(historyFile)
+    this.displayPrompt()
+  }
+})
+
+// define the Lode .test command
+rpl.defineCommand( "test", {
+  help: "Run the default test script ('acidtests.js').",
+  action(n) { 
+    clearAccumulator()
+    // If a number is passed, store it in a global variable
+    if (n !== "" && Number.isInteger(Number(n))) {
+      global.TestIndex = Number(n)
+    } else {
+      delete global.TestIndex  // clean up if not specified
+    }
+    initialize('utils/acidtests')
+    this.displayPrompt()
+  }
+})
+
+// define the Lode .test command
+rpl.defineCommand( "testall", {
+  help: "Run the default test script ('acidtests.js') including student files (long!).",
+  action(n) {
+    clearAccumulator()
+    // If a number is passed, store it in a global variable
+    if (n !== "" && Number.isInteger(Number(n))) {
+      global.TestIndex = Number(n)
+    } else {
+      delete global.TestIndex  // clean up if not specified
+    }
+    const saved = LurchOptions.runStudentTests 
+    LurchOptions.runStudentTests = true 
+    initialize('utils/acidtests')
+    LurchOptions.runStudentTests = saved
+    this.displayPrompt()
+  }
+})
+
+// Define the Lode .compileparser command. 
+//
+// The tracing parser is only for Lode and debugging and passes our own tracer
+// to the non-tracing parsers
+rpl.defineCommand( "compileparser", {
+  help: "Compile the Lurch parsers and rebuild the parser docs.",
+  action(trace) {
+    // npx resolves the peggy version pinned in lde/node_modules, NOT
+    // whatever global peggy happens to be on the PATH (a bare `peggy`
+    // once silently compiled with a globally installed major version
+    // that generates different code - see the Phase 3d-i decision log)
+    const compile = (name) => {
+      console.log(defaultPen(`Compiling Lurch parser to lurch-to-${name}.js...`))
+      execStr(`cd parsers && npx peggy --cache --format es -o lurch-to-${name}.js lurch-to-${name}.peggy`)
+      // replace peggy's plain-object results cache with a Map (see
+      // fix-parser-cache.js - the object's dictionary-mode lookups make
+      // parse time swing with input length and content)
+      execStr(`cd parsers && node fix-parser-cache.js lurch-to-${name}.js`)
+      if (trace) {
+        console.log(defaultPen(`Compiling Lurch parser to lurch-to-${name}-trace.js...`))
+        execStr(`cd parsers && npx peggy --cache --trace --format es -o lurch-to-${name}-trace.js lurch-to-${name}.peggy`)
+        execStr(`cd parsers && node fix-parser-cache.js lurch-to-${name}-trace.js`)
+      }
+    }
+
+    try {
+      console.log('')
+      if (!trace) console.log(commentPen(`(Use option ${itemPen('.compileparser true')} to recompile the tracing parsers)\n`))
+      compile('putdown')
+    } catch (err) {
+      console.log(xPen('Error compiling the parser.'))
+    }
+
+    try {
+      console.log(`${defaultPen('Rebuilding the parser doc page...')}`)
+      makedoc()
+      console.log(`${defaultPen('Done.')}`)
+    } catch (err) {
+      console.log(xPen('Error rebuilding the parser doc page.'))
+    }
+    console.log()
+    this.displayPrompt()
+  }
+})
+
+// Define the Lode .compilenotation command: regenerate the
+// lurch-notation-compiled.js transport wrapper from lurch-notation.txt
+// (the .compileparser analog for the Phase 4 notation file; the golden
+// suite fails loudly when the wrapper is stale)
+rpl.defineCommand( "compilenotation", {
+  help: "Recompile lurch-notation.txt to its ES-module wrapper.",
+  action() {
+    try {
+      execStr(`cd parsers && node compile-notation.js`)
+      console.log(defaultPen(`Recompiled lurch-notation.txt → lurch-notation-compiled.js`))
+    } catch (err) {
+      console.log(xPen('Error compiling the notation file:'))
+      console.log(String(err.stdout ?? err.message ?? err))
+    }
+    this.displayPrompt()
+  }
+})
+
+// define the Lode .parsertest command
+rpl.defineCommand( "parsertest", {
+  help: "Run the parser golden-snapshot tests (options: --update, --verbose).",
+  action(args) {
+    if (!args) console.log(commentPen(`\n(Use option ${itemPen('--update')} to certify the current changes)\n`))
+
+    // check that the whole multiline test document still builds an LC from
+    // its putdown output (the snapshot suite only checks the output string)
+    try {
+      lc(parse(loadStr('parsers/LurchParserTest')))
+      console.log(`${defaultPen('LurchParserTest (LC build):')} ${greencheck} ok`)
+    } catch (e) {
+      console.log(xPen(`✗ LurchParserTest putdown output no longer builds an LC`))
+    }
+    // compare both parsers' outputs on every test line to the snapshots
+    runParserTests( String(args).split(/\s+/).filter(Boolean) )
+    this.displayPrompt()
+  }
+})
+
+// define the Lode .ldetest command
+rpl.defineCommand( "ldetest", {
+  help: "Run the main LDE test suite (npm test in the lde folder).",
+  action() {
+    try {
+      execLive('cd ../.. && npm test')
+    } catch {
+      console.log(xPen('The LDE test suite reported errors.'))
+    }
+    this.displayPrompt()
+  }
+})
+
+// define the Lode .webtest command
+rpl.defineCommand( "webtest", {
+  help: "Run the web UI test suite (npm test in the lurchmath folder).",
+  action() {
+    try {
+      console.log(defaultPen(`If the test fails run ${itemPen('npx playwright show-report')} in the lurchmath folder`)) 
+      execLive('cd ../../../lurchmath && npm test')
+    } catch {
+      console.log(xPen('The web UI test suite reported errors.'))
+    }
+    this.displayPrompt()
+  }
+})
+
+// define the Lode .makedocs command
+rpl.defineCommand( "makedocs", {
+  help: "Run jsdocs to make the documentation.",
+  action() {
+    try {
+      console.log(defaultPen('Building experimental docs...')) 
+      // this runs in the experimental folder
+      execStr('rm -rf docs && jsdoc ./* -d docs -c utils/jsdoc-conf.json -u tutorials/ && node utils/post-docs')
+      console.log(defaultPen('...done'))
+    } catch (err) {
+      console.log('Error building experimental docs.\n' + String(err.stderr || err.message))
+    }
+    try {
+      console.log(defaultPen('Building lde docs...')) 
+      // this runs in the lde folder
+      execStr('cd ../.. && npm run docs')
+      console.log(defaultPen('...done'))
+    } catch (err) {
+      console.log('Error building lde docs.\n' + String(err.stderr || err.message))
+    }
+    try {
+      console.log(defaultPen('Building lurchmath docs...')) 
+      // this runs in the lurchmath folder
+      execStr('cd ../../../lurchmath && npm run docs')
+      console.log(defaultPen('...done'))
+    } catch (err) {
+      console.log('Error building lurchmath docs.\n' + String(err.stderr || err.message))
+    }
+    this.displayPrompt()
+  }
+})
+
+// define the Lode .showdocs command
+rpl.defineCommand( "showdocs", {
+  help: "Open the jsdocs index.html page in the browser.",
+  action() { 
+    exec('open docs/index.html')
+    this.displayPrompt()
+  }
+})
+
+// define the Lode .fixcdn command
+rpl.defineCommand( "fixrepo", {
+  help: "Modify the main repo code with local changes.",
+  action() { 
+    const lurchmathpath = '../../../lurchmath'
+
+    console.log(defaultPen('Overwriting lde-cdn.js ...'))
+    exec('cp "utils/lurchmath config/lde-cdn.js" ' + lurchmathpath)
+
+    console.log(defaultPen('Changing default About page ...\n'))
+    let editorjs = fs.readFileSync( lurchmathpath+'/editor.js' , { encoding:'utf8'} )
+    editorjs = editorjs.replace('lurchmath.github.io/site/about/','monks.scranton.edu/lurch')
+    fs.writeFileSync( lurchmathpath+'/editor.js' , editorjs )
+
+    console.log(defaultPen('Changing "Expression" menu to "Math" ...\n'))
+    let expjs = fs.readFileSync( lurchmathpath+'/expressions.js' , { encoding:'utf8'} )
+    expjs = expjs.replace("text : 'Expression','","text : 'Math',")
+    fs.writeFileSync( lurchmathpath+'/expressions.js' , expjs )
+
+    console.log(defaultPen('...done'))
+    this.displayPrompt()
+  }
+})
+
+// define the 'interpret' list of function calls to loop through with .step,
+// assigning appropriate labels
+const makeInterpretSteps = () => {
+  const rawlist = [ 
+    ['addSystemDeclarations', addSystemDeclarations],  
+    ['processShorthands', doc => {
+        addIndex(doc,'Parsing')
+        return processShorthands(doc)
+      }],
+    [ 'moveDeclaresToTop', doc => { 
+        addIndex(doc,'Interpret')
+        return moveDeclaresToTop(doc)
+      }],
+    [ 'processTheorems', processTheorems ],
+    [ 'processDeclarationBodies',processDeclarationBodies ],
+    [ 'processLetEnvironments', processLetEnvironments ],
+    [ 'processBindings', doc => {
+        addIndex(doc,'Interpret')
+        return processBindings(doc)
+      }],
+    ['processRules',processRules],
+    ['splitConclusions',splitConclusions],
+    ['assignProperNames',assignProperNames],
+    ['markDeclaredSymbols',markDeclaredSymbols]
+  ]
+  rawlist.forEach( ([ nm, fn ]) => {
+    fn.label = nm
+  })
+  return rawlist.map( x => x[1])
+}
+global.interpretSteps = makeInterpretSteps()
+
+// Add interactive step-through utility to global scope
+global.runStepByStep = async (funcs, doc) => {
+
+  if (!Array.isArray(funcs) || funcs.length === 0) {
+    console.log('No functions provided.')
+    return
+  }
+
+  console.log(`\nInteractive step-through started for ${funcs.length} functions on`)
+  console.log(rpl.writer(doc))
+
+  const promptKey = (message) => {
+    return new Promise(resolve => {
+      process.stdin.setRawMode(true)
+      process.stdin.resume()
+      process.stdin.once('data', key => {
+        const k = key.toString()
+        resolve(k)
+      })
+      process.stdout.write(message)
+    })
+  }
+
+  let escaped = false
+  try {
+    for (let i = 0; i < funcs.length; i++) {
+      const fn = funcs[i]
+      const name = fn.label || fn.name || `Function #${i + 1}`
+
+      const key = await promptKey(`\n[${i + 1}/${funcs.length}] Run "${name}"? (Enter=run, Esc=quit): `)
+
+      if (key === '\u001b') { // ESC key
+        escaped = true
+        break
+      }
+
+      if (key === '\r') { // Enter
+        try {
+          const result = await fn(doc)
+          console.log(rpl.writer(result))
+          doc = result // optional chaining of results
+        } catch (err) {
+          console.error(`Error in ${name}:`, err)
+        }
+      }
+    }
+  } finally {
+    const msg = (escaped)?'\n\n✗ Aborting step-through.\n':'\n✔ Step-through complete.\n'
+    console.log(msg)
+    rpl.displayPrompt()     
+  }
+}
+
+// Define .step command for REPL
+rpl.defineCommand("step", {
+  help: "Interactively run a list of functions on a given argument.",
+  action(input) {
+    try {
+      // Expect input like: "arg f1 f2 f3" (functions must exist in global scope)
+      const parts = input.trim().split(/\s+/)
+      if (parts[0] === '') {
+        console.log("Usage: .step <arg>")
+        this.displayPrompt()
+        return
+      }
+      
+      let docName = parts[0]
+      let doc
+      if (docName in global) {
+        doc = global[docName] // Use the actual variable if it exists
+      } else {
+        // If it's not a variable name, try JSON parse
+        try {
+          doc = JSON.parse(docName)
+        } catch {
+          doc = docName // fallback to raw string
+        }
+      }
+
+      const funcs = interpretSteps
+      // const funcs = parts.slice(1).map(fnName => {
+      //   if (typeof global[fnName] === 'function') return global[fnName]
+      //   throw new Error(`Function not found: ${fnName}`)
+      // })
+
+      // runStepByStep(funcs, doc).then(() => this.displayPrompt())
+      runStepByStep(funcs, doc)
+    } catch (err) {
+      console.error('Error starting step-through:', err.message)
+      this.displayPrompt()
+    }
+  }
+})
+
+// export the repl.writer to be available at the repl command line
+global.write = s => console.log(rpl.writer(s))
+
+// Just a global place to store benchmarking information.  Just assign properties
+// to it if you want to benchmark e.g. number of times a routine is called,
+// total time, number of instantiations created, etc.
+global.Accumulator = { }
+// global.clearAccumulator = () => Accumulator = { }
+global.clearAccumulator = () => { global.Accumulator = {} }
+
+// if there is an argument to lode.js, i.e., if someone runs this script as
+//
+// > node lode fname
+//  
+// then initialize the lode instance with the script named fname.js
+if (process.argv.length>2) {
+  let fname=process.argv[2]
+  initialize(fname)
+  // if there is no argument, try to load init.js in the current folder
+} else if ( fs.existsSync('init.js') ) {
+  initialize('init')
+}
+
+/////////////////////////////////////////////

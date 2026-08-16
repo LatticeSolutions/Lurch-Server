@@ -1,0 +1,26 @@
+
+            <div id="loadlink">
+                <p><a>Open this file in the Lurch web app</a></p>
+                <script language="javascript">
+                    const link = document.querySelector( '#loadlink > p > a' )
+                    const thisURL = encodeURIComponent( window.location.href )
+                    link?.setAttribute( 'href', 'http://localhost:3000/?load=' + thisURL )
+                </script>
+            </div>
+        
+            <div id="metadata" style="display: none;"></div>
+            <div id="document"><p><span class="lurch-atom" contenteditable="false" data-metadata_type="&quot;expression&quot;" data-metadata_lurch-notation="&quot;Declare EquationsRule, subset&quot;"><span class="lurch-atom-body"><span class="ML__latex"><span class="ML__base"><span class="ML__text">Declare EquationsRule and </span><span class="ML__cmr">&sube;</span></span></span></span></span></p>
+<div class="lurch-atom" data-metadata_type="&quot;rule&quot;" data-shell_title="Rule:">
+<p><span class="lurch-atom" contenteditable="false" data-metadata_type="&quot;expression&quot;" data-metadata_lurch-notation="&quot;EquationsRule&quot;"><span class="lurch-atom-body"><span class="ML__latex"><span class="ML__base"><span class="ML__text">EquationsRule</span></span></span></span></span></p>
+<div class="lurch-atom-suffix">&nbsp;</div>
+</div>
+<div class="lurch-atom" data-metadata_type="&quot;rule&quot;" data-shell_title="Rule:">
+<p><span class="lurch-atom" contenteditable="false" data-metadata_type="&quot;expression&quot;" data-metadata_lurch-notation="&quot;if A subset B, B subset C&quot;"><span class="lurch-atom-body"><span class="ML__latex"><span class="ML__base"><span class="ML__text">if </span><span class="ML__mathit">A</span><span class="ML__cmr">&sube;</span><span class="ML__mathit" style="margin-right: 0.06em;">B</span><span class="ML__text"> and </span><span class="ML__mathit" style="margin-right: 0.06em;">B</span><span class="ML__cmr">&sube;</span><span class="ML__mathit" style="margin-right: 0.08em;">C</span></span></span></span></span> then <span class="lurch-atom" contenteditable="false" data-metadata_type="&quot;expression&quot;" data-metadata_lurch-notation="&quot;A subset C&quot;"><span class="lurch-atom-body"><span class="ML__latex"><span class="ML__base"><span class="ML__mathit">A</span><span class="ML__cmr">&sube;</span><span class="ML__mathit" style="margin-right: 0.08em;">C</span></span></span></span></span></p>
+<div class="lurch-atom-suffix">&nbsp;</div>
+</div>
+<div class="lurch-atom" data-metadata_type="&quot;recall&quot;" data-shell_title="Recall:">
+<p><span class="lurch-atom" contenteditable="false" data-metadata_type="&quot;expression&quot;" data-metadata_lurch-notation="&quot;A&quot;"><span class="lurch-atom-body"><span class="ML__latex"><span class="ML__base"><span class="ML__mathit">A</span></span></span></span></span></p>
+<div class="lurch-atom-suffix">&nbsp;</div>
+</div>
+<p style="text-align: center;"><span class="lurch-atom" contenteditable="false" data-metadata_type="&quot;expression&quot;" data-metadata_lurch-notation="&quot;x = x\n  = x&quot;"><span class="lurch-atom-body"><span class="ML__latex"><span class="ML__base"><span class="ML__mtable"><span class="col-align-r"><span class="ML__vlist-t ML__vlist-t2"><span class="ML__vlist-r"><span class="ML__vlist" style="height: 1.6em;"><span style="top: -3.76em;"><span style="height: 1.5em; display: inline-block;"><span class="ML__mathit">x</span></span></span></span><span class="ML__vlist-s">​</span></span></span></span><span class="col-align-l"><span class="ML__vlist-t ML__vlist-t2"><span class="ML__vlist-r"><span class="ML__vlist" style="height: 1.6em;"><span style="top: -3.76em;"><span style="height: 1.5em; display: inline-block;"><span class="ML__cmr">=</span><span class="ML__mathit">x</span></span></span><span style="top: -2.25em;"><span style="height: 1.2em; display: inline-block;"><span class="ML__cmr">=</span><span class="ML__mathit">x</span></span></span></span><span class="ML__vlist-s">​</span></span></span></span></span></span></span></span></span></p></div>
+        

@@ -1,0 +1,85 @@
+////////////////////////////////////////////////////////////////////
+// Tests for Peggy Parser with the option enableSets:true
+//
+// This file is parsed one line at a time individualy.  
+
+// finite sets
+set()
+set(0)
+set(0,1)
+set(0,2,4,6)
+{}
+{0}
+{0,1}
+{ 0 , 2 , 4 , 6 }
+x in Set()
+x in Set(0)
+x in Set(0,1)
+x in Set( 0 , 2 , 4 , 6 ) 
+x in {}
+x in {0}
+x in {0,1}
+x in {0,2,4,6}
+x in set() union {n-1,n,n+1}
+x in {0,1} intersect x set()
+x in {} union x set()
+// set builder
+{ n : P(n) }
+{ n : @P(n) }
+{n:P(n)}
+{n:@P(n)}
+{ n : n is prime and n is odd }
+n in { n : n in { 1,2,3 } }
+S in { { 0 }, { 0 , {0}}, { p : p cong 3 mod 4 } }
+
+////////////////////////////////////////////////////////////////////
+// Extended tests, used with the golden-snapshot suite in
+// parsertests.js.  Every line below must parse in BOTH the putdown and
+// tex parsers with the option enableSets:true.
+
+// set literals in expressions
+2 in {1,2,3}
+A = {1,2,3}
+{1,2} union {3}
+{1} cup {2} cup {3}
+{} subset {1}
+x notin {}
+{0,1} times {0,1}
+{x} = {y}
+{ a, b } setminus { b }
+{1,2,3} cap NN
+{ {1}, {1,2} }
+P({1,2})
+𝒫({1,2})
+forall x in {1,2,3}.x leq 3
+
+// summation over a set literal (sumOver)
+sum k in {1,2,3} of k^2
+sum x in {1,2} union {3} of x^2
+sum of x^2 for x in {1,2,3}
+
+// set builder
+{ x : x^2 leq 2 }
+x in {n : n is even}
+S = { p : p cong 3 mod 4 }
+
+// labels and refs still use ordinary braces in set mode
+x in A by {membership}
+
+// raw putdown escapes without braces are unaffected by set mode
+«(∈ 2 (set 1 2))»
+// the set-brace replacement
+// and colon padding never reach inside «» escapes or "strings"
+«{ :A A }»
+% "a {b} c"
+
+// set literals are closed units, so they take the whole
+// postfix/exponent layer; locked here for the set-mode
+// invariance check (the tokenizer's brace replacement composes with
+// Closed)
+{1,2}^2
+{1,2}!
+{1,2}'
+{}^2
+2 in {1,2}^2
+({1,2} cap {2,3})^2

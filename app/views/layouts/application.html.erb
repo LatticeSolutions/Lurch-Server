@@ -43,10 +43,10 @@
       <% else %>
         <div class="bg-white max-w-5xl p-4 m-auto">
           <% if notice %>
-            <p class="bg-green-50 text-green-800 px-4 py-2 text-sm"><%= notice %></p>
+            <p class="cursor-pointer bg-green-50 text-green-800 px-4 py-2 text-sm" onclick="this.remove()"><%= notice %></p>
           <% end %>
           <% if alert %>
-            <p class="bg-red-50 text-red-800 px-4 py-2 text-sm"><%= alert %></p>
+            <p class="cursor-pointer bg-red-50 text-red-800 px-4 py-2 text-sm" onclick="this.remove()"><%= alert %></p>
           <% end %>
           <%= yield %>
         </div>

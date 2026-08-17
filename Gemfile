@@ -20,6 +20,12 @@ gem "jbuilder"
 # Use Active Model has_secure_password [https://guides.rubyonrails.org/active_model_basics.html#securepassword]
 # gem "bcrypt", "~> 3.1.7"
 
+# Flexible authentication solution for Rails with Warden [https://github.com/heartcombo/devise]
+gem "devise"
+
+# Simple, friendly authorization for Rails [https://github.com/CanCanCommunity/cancancan]
+gem "cancancan"
+
 # Windows does not include zoneinfo files, so bundle the tzinfo-data gem
 gem "tzinfo-data", platforms: %i[ windows jruby ]
 

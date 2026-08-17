@@ -1,4 +1,5 @@
 Rails.application.routes.draw do
+  devise_for :users
   resources :documents, except: [ :edit ]
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
 

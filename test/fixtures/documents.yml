@@ -3,7 +3,9 @@
 one:
   title: MyString
   content: MyText
+  user: regular
 
 two:
   title: MyString
   content: MyText
+  user: regular

@@ -11,7 +11,10 @@
       <% @documents.each do |document| %>
         <li>
           <%= document.title %>
-          <%= link_to "View", document, class: "text-sky-600 hover:underline mx-4" %>
+          <% if document.user != current_user %>
+            <span class="text-sm text-gray-600">(<%= document.user.email %>)</span>
+          <% end %>
+          <%= link_to "View", document, class: "text-sky-600 hover:underline mx-4", data: { turbo: false } %>
           <%= button_to "Destroy", document, method: :delete, class: "text-red-600 hover:underline cursor-pointer", form_class: "inline-block", data: { turbo_confirm: "Are you sure?" } %>
         </li>
       <% end %>

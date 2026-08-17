@@ -2,8 +2,13 @@
 
 <link rel="stylesheet" href="/lurchmath/main-app-styles.css">
 
-<h1 class="my-5 text-xl font-thin"><%= @document.title %></h1>
-<div id="editor-container"></div>
+<h1 class="my-5 text-xl font-thin">
+  <%= @document.title %>
+  <% if @document.user != current_user %>
+    <span class="text-lg text-gray-600">(<%= @document.user.email %>)</span>
+  <% end %>
+</h1>
+<div id="editor-container">Loading editor...</div>
 
 <script type="module" src="/lurchmath/editor.js"></script>
 <script type="module">
@@ -118,7 +123,7 @@
         icon : 'close',
         tooltip : 'Close this document and return to the homepage',
         onAction : () => ensureWorkIsSaved( editor ).then( ok => {
-          if ( ok ) window.location.href = '/'
+          if ( ok ) window.location.href = '/documents'
         } )
       } )
     } )

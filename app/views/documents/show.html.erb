@@ -7,6 +7,18 @@
 <script type="module" src="/lurchmath/editor.js"></script>
 <script type="module">
   import { LurchDocument } from "/lurchmath/lurch-document.js"
+  import { Dialog } from "/lurchmath/dialog.js"
+
+  const documentId = <%= @document.id.to_json.html_safe %>
+
+  const csrfToken = () =>
+    document.querySelector( 'meta[name="csrf-token"]' ).content
+
+  // Same logic as the private ensureWorkIsSaved() in lurchmath/file-system.js,
+  // reused here since it isn't exported for us to import directly.
+  const ensureWorkIsSaved = editor => editor.isDirty()
+    ? Dialog.areYouSure( editor, 'You will lose any unsaved work.  Continue anyway?' )
+    : Promise.resolve( true )
 
   window.addEventListener( "load", () => {
     Lurch.createApp( document.getElementById( "editor-container" ), {
@@ -19,6 +31,51 @@
     } ).then( editor => {
       editor.on( "init", () => {
         new LurchDocument( editor ).setDocument( <%= @document.content.to_json.html_safe %> )
+      } )
+
+      // Replace the file-system-backed New/Open/Save menu items (which target
+      // browser storage/Dropbox/a generic web URL) with actions against this
+      // app's own documents.
+      editor.ui.registry.addMenuItem( 'newlurchdocument', {
+        text : 'New',
+        icon : 'new-document',
+        tooltip : 'New document',
+        shortcut : 'Alt+N',
+        onAction : () => ensureWorkIsSaved( editor ).then( ok => {
+          if ( ok ) window.location.href = '/documents/new'
+        } )
+      } )
+      editor.ui.registry.addMenuItem( 'opendocument', {
+        text : 'Open',
+        tooltip : 'Open file',
+        shortcut : 'Alt+O',
+        onAction : () => ensureWorkIsSaved( editor ).then( ok => {
+          if ( ok ) window.location.href = '/documents'
+        } )
+      } )
+      editor.ui.registry.addMenuItem( 'savedocument', {
+        text : 'Save',
+        tooltip : 'Save document',
+        shortcut : 'Alt+S',
+        onAction : () => {
+          const content = new LurchDocument( editor ).getDocument( '' )
+          fetch( `/documents/${documentId}.json`, {
+            method : 'PATCH',
+            headers : {
+              'Content-Type' : 'application/json',
+              'Accept' : 'application/json',
+              'X-CSRF-Token' : csrfToken()
+            },
+            body : JSON.stringify( { document : { content } } )
+          } ).then( response => {
+            if ( !response.ok ) throw new Error( response.statusText )
+            editor.setDirty( false )
+            Dialog.notify( editor, 'success', 'Document saved.' )
+          } ).catch( error => {
+            Dialog.notify( editor, 'error', 'Could not save the document.' )
+            console.error( error )
+          } )
+        }
       } )
     } )
   } )

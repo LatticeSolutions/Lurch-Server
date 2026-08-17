@@ -2,6 +2,7 @@
 
 <link rel="stylesheet" href="/lurchmath/main-app-styles.css">
 
+<h1 class="my-5 text-xl font-thin"><%= @document.title %></h1>
 <div id="editor-container"></div>
 
 <script type="module" src="/lurchmath/editor.js"></script>
@@ -10,6 +11,7 @@
   import { Dialog } from "/lurchmath/dialog.js"
 
   const documentId = <%= @document.id.to_json.html_safe %>
+  const documentTitle = <%= @document.title.to_json.html_safe %>
 
   const csrfToken = () =>
     document.querySelector( 'meta[name="csrf-token"]' ).content
@@ -27,7 +29,16 @@
       autoSaveEnabled : false,
       // editor.js unconditionally appends to menuData.help.items, which is
       // only initialized if at least one help page is supplied.
-      helpPages : [ { title : "Getting Started", url : "https://about.lurch.plus/getting-started" } ]
+      helpPages : [ { title : "Getting Started", url : "https://about.lurch.plus/getting-started" } ],
+      // Trim the stock File menu (which otherwise includes Save As, Delete a
+      // document, Embed document, and Export LaTeX) down to just the items
+      // wired to this app's own Rails actions, plus Print.
+      menuData : {
+        file : {
+          title : 'File',
+          items : 'newlurchdocument opendocument savedocument duplicatedocument | print | closedocument'
+        }
+      }
     } ).then( editor => {
       editor.on( "init", () => {
         new LurchDocument( editor ).setDocument( <%= @document.content.to_json.html_safe %> )
@@ -47,7 +58,7 @@
       } )
       editor.ui.registry.addMenuItem( 'opendocument', {
         text : 'Open',
-        tooltip : 'Open file',
+        tooltip : 'Open document',
         shortcut : 'Alt+O',
         onAction : () => ensureWorkIsSaved( editor ).then( ok => {
           if ( ok ) window.location.href = '/documents'
@@ -77,11 +88,39 @@
           } )
         }
       } )
+      editor.ui.registry.addMenuItem( 'duplicatedocument', {
+        text : 'Duplicate',
+        icon : 'duplicate',
+        tooltip : 'Save a copy as a new document',
+        onAction : () => {
+          const content = new LurchDocument( editor ).getDocument( '' )
+          fetch( '/documents.json', {
+            method : 'POST',
+            headers : {
+              'Content-Type' : 'application/json',
+              'Accept' : 'application/json',
+              'X-CSRF-Token' : csrfToken()
+            },
+            body : JSON.stringify( { document : { title : `Copy of ${documentTitle}`, content } } )
+          } ).then( response => {
+            if ( !response.ok ) throw new Error( response.statusText )
+            return response.json()
+          } ).then( created => {
+            window.location.href = `/documents/${created.id}`
+          } ).catch( error => {
+            Dialog.notify( editor, 'error', 'Could not duplicate the document.' )
+            console.error( error )
+          } )
+        }
+      } )
+      editor.ui.registry.addMenuItem( 'closedocument', {
+        text : 'Close',
+        icon : 'close',
+        tooltip : 'Close this document and return to the homepage',
+        onAction : () => ensureWorkIsSaved( editor ).then( ok => {
+          if ( ok ) window.location.href = '/'
+        } )
+      } )
     } )
   } )
 </script>
-
-<div>
-  <%= link_to "Back to documents", documents_path, class: "w-full sm:w-auto text-center mt-2 sm:mt-0 sm:ml-2 rounded-md px-3.5 py-2.5 bg-gray-100 hover:bg-gray-50 inline-block font-medium" %>
-  <%= button_to "Destroy this document", @document, method: :delete, form_class: "sm:inline-block mt-2 sm:mt-0 sm:ml-2", class: "w-full rounded-md px-3.5 py-2.5 text-white bg-red-600 hover:bg-red-500 font-medium cursor-pointer", data: { turbo_confirm: "Are you sure?" } %>
-</div>

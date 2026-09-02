@@ -116,4 +116,27 @@ class DocumentsControllerTest < ActionDispatch::IntegrationTest
     ids = JSON.parse(response.body).map { |doc| doc["id"] }
     assert_equal [ documents(:published_one).id ], ids
   end
+
+  test "owner can set context on their own document" do
+    target = documents(:published_one)
+    patch context_document_url(@document), params: { document: { context_document_ids: [ target.id ] } }, as: :json
+    assert_response :success
+    assert_equal [ target.id ], @document.reload.context_document_ids
+  end
+
+  test "a non-owner cannot set context on someone else's document" do
+    target = documents(:published_one)
+    sign_in users(:other)
+    patch context_document_url(@document), params: { document: { context_document_ids: [ target.id ] } }
+    assert_redirected_to root_url
+    assert_equal [], @document.reload.context_document_ids
+  end
+
+  test "an admin can set context on someone else's document" do
+    target = documents(:published_one)
+    sign_in users(:admin)
+    patch context_document_url(@document), params: { document: { context_document_ids: [ target.id ] } }, as: :json
+    assert_response :success
+    assert_equal [ target.id ], @document.reload.context_document_ids
+  end
 end

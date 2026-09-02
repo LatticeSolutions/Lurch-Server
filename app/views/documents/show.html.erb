@@ -28,6 +28,18 @@
   // they don't own, gets a read-only editor. This mirrors the server-side
   // Ability rules in app/models/ability.rb.
   const canEdit = <%= (current_user.admin? || @document.user == current_user).to_json %>
+  // The document's chosen context, as persisted in the database (see the
+  // document_contexts join table / Document#context_documents), embedded here
+  // with full content so the editor doesn't need a round-trip to render it.
+  const initialContext = <%= @document.context_documents.map { |d|
+    { id: d.id, title: d.title, owner: d.user.email, content: d.content }
+  }.to_json.html_safe %>
+  // Tracks the currently-chosen context ids client-side, kept in sync with the
+  // database via PATCH /documents/:id/context (see below). This is the source
+  // of truth for what's "already attached" when the picker dialog reopens --
+  // NOT whatever dependency atoms happen to be sitting in the header, since
+  // those are just a derived, rebuilt-on-load rendering of this choice.
+  let currentContextIds = initialContext.map( doc => doc.id )
 
   const csrfToken = () =>
     document.querySelector( 'meta[name="csrf-token"]' ).content
@@ -78,8 +90,43 @@
         }
       }
     } ).then( editor => {
+      // Rebuild the document header's Dependency atoms from a list of
+      // { id, title, owner, content } context documents, replacing whatever
+      // dependency atoms are currently there. This is what makes the editor
+      // always reflect the database-persisted choice of context (see
+      // initialContext/currentContextIds above), regardless of what's baked
+      // into the document's own saved content.
+      const applyContext = documents => {
+        let header = getHeader( editor )
+        if ( !header ) {
+          setHeader( editor, '' )
+          header = getHeader( editor )
+        }
+        // (NOTE: header is a CLONE, so edits here don't affect the real
+        // document header until we call setHeader() below.)
+        Dependency.topLevelDependenciesIn( header, editor ).forEach(
+          atom => atom.element.remove() )
+        documents.forEach( doc => {
+          const dependency = Atom.newBlock( editor, '', {
+            type : 'dependency',
+            description : 'none',
+            filename : doc.title,
+            source : 'Public Documents',
+            autoRefresh : false
+          } )
+          dependency.setHTMLMetadata( 'content', doc.content )
+          dependency.update()
+          header.appendChild( dependency.element )
+        } )
+        setHeader( editor, header.innerHTML )
+        // Remove any context panel that may have been shown; it's now out of
+        // date and will be rebuilt the next time "Show/Hide context" is opened.
+        editor.getBody().querySelector( '#context' )?.remove()
+      }
+
       editor.on( "init", () => {
         new LurchDocument( editor ).setDocument( <%= @document.content.to_json.html_safe %> )
+        applyContext( initialContext )
         if ( !canEdit ) editor.mode.set( 'readonly' )
       } )
 
@@ -170,17 +217,14 @@
           tooltip : 'Choose which public documents this one depends on',
           icon : 'edit-block',
           onAction : () => {
-            const header = getHeader( editor )
-            const alreadyAttached = header
-              ? Dependency.topLevelDependenciesIn( header, editor )
-                  .map( atom => atom.getMetadata( 'sourceDocumentId' ) )
-              : [ ]
             fetch( '/documents/public.json', {
               headers : { 'Accept' : 'application/json' }
             } ).then( response => {
               if ( !response.ok ) throw new Error( response.statusText )
               return response.json()
             } ).then( publicDocuments => {
+              // A document can't depend on itself.
+              publicDocuments = publicDocuments.filter( doc => doc.id !== documentId )
               const dialog = new Dialog( 'Add or remove context', editor )
               dialog.json.size = 'medium'
               if ( publicDocuments.length == 0 ) {
@@ -190,43 +234,35 @@
                 publicDocuments.forEach( doc => dialog.addItem(
                   new CheckBoxItem( doc.id, `${doc.title} (${doc.owner})` ) ) )
                 dialog.setInitialData( Object.fromEntries( publicDocuments.map(
-                  doc => [ doc.id, alreadyAttached.includes( doc.id ) ] ) ) )
+                  doc => [ doc.id, currentContextIds.includes( doc.id ) ] ) ) )
               }
               dialog.show().then( userHitOK => {
                 if ( !userHitOK ) return
                 const selectedIds = publicDocuments.filter(
                   doc => dialog.get( doc.id ) ).map( doc => doc.id )
-                // Remove any context panel that may have been shown; it's now
-                // out of date and will be rebuilt the next time it's opened.
-                editor.getBody().querySelector( '#context' )?.remove()
-                Promise.all( selectedIds.map( id =>
-                  fetch( `/documents/${id}.json`, {
-                    headers : { 'Accept' : 'application/json' }
-                  } ).then( response => response.json() )
-                ) ).then( selectedDocuments => {
-                  let newHeader = getHeader( editor )
-                  if ( !newHeader ) {
-                    setHeader( editor, '' )
-                    newHeader = getHeader( editor )
-                  }
-                  // (NOTE: newHeader is a CLONE, so edits here don't affect the
-                  // real document header until we call setHeader() below.)
-                  Dependency.topLevelDependenciesIn( newHeader, editor ).forEach(
-                    atom => atom.element.remove() )
-                  selectedDocuments.forEach( doc => {
-                    const dependency = Atom.newBlock( editor, '', {
-                      type : 'dependency',
-                      description : 'none',
-                      filename : doc.title,
-                      source : 'Public Documents',
-                      autoRefresh : false,
-                      sourceDocumentId : doc.id
-                    } )
-                    dependency.setHTMLMetadata( 'content', doc.content )
-                    dependency.update()
-                    newHeader.appendChild( dependency.element )
-                  } )
-                  setHeader( editor, newHeader.innerHTML )
+                // Persist the choice itself to the database immediately,
+                // independent of the general "Save" flow (which only covers
+                // this document's own title/content).
+                fetch( `/documents/${documentId}/context.json`, {
+                  method : 'PATCH',
+                  headers : {
+                    'Content-Type' : 'application/json',
+                    'Accept' : 'application/json',
+                    'X-CSRF-Token' : csrfToken()
+                  },
+                  body : JSON.stringify( { document : { context_document_ids : selectedIds } } )
+                } ).then( response => {
+                  if ( !response.ok ) throw new Error( response.statusText )
+                  currentContextIds = selectedIds
+                  // Refresh the live header to reflect the new choice right
+                  // away, without requiring a page reload.
+                  return Promise.all( selectedIds.map( id =>
+                    fetch( `/documents/${id}.json`, {
+                      headers : { 'Accept' : 'application/json' }
+                    } ).then( response => response.json() )
+                  ) )
+                } ).then( selectedDocuments => {
+                  applyContext( selectedDocuments )
                   Dialog.notify( editor, 'success', 'Updated this document’s context.' )
                 } ).catch( error => {
                   Dialog.notify( editor, 'error', 'Could not update this document’s context.' )

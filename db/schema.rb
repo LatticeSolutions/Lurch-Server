@@ -10,9 +10,19 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_02_192232) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_02_213916) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
+
+  create_table "document_contexts", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "context_document_id", null: false
+    t.datetime "created_at", null: false
+    t.uuid "document_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["context_document_id"], name: "index_document_contexts_on_context_document_id"
+    t.index ["document_id", "context_document_id"], name: "index_document_contexts_on_document_and_context", unique: true
+    t.index ["document_id"], name: "index_document_contexts_on_document_id"
+  end
 
   create_table "documents", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.text "content"
@@ -38,5 +48,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_02_192232) do
     t.index ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true
   end
 
+  add_foreign_key "document_contexts", "documents"
+  add_foreign_key "document_contexts", "documents", column: "context_document_id"
   add_foreign_key "documents", "users"
 end

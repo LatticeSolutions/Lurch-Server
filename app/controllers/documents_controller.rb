@@ -30,6 +30,15 @@ class DocumentsController < ApplicationController
     redirect_to documents_path, notice: "Document made private."
   end
 
+  # PATCH /documents/1/context
+  def context
+    if @document.update(context_params)
+      render json: { context_document_ids: @document.context_document_ids }
+    else
+      render json: @document.errors, status: :unprocessable_content
+    end
+  end
+
   # GET /documents/new
   def new
   end
@@ -79,5 +88,9 @@ class DocumentsController < ApplicationController
     # excluded so ownership cannot be set/overridden via the form.
     def document_params
       params.expect(document: [ :title, :content ])
+    end
+
+    def context_params
+      params.expect(document: [ context_document_ids: [] ])
     end
 end

@@ -39,6 +39,14 @@
       // the vendor default "minimal" presentation view.
       appDefaults : { 'default shell style' : 'boxed' },
       documentDefaults : { 'shell style' : 'boxed' },
+      // Add the "validate" button (a green checkmark, already wired to the
+      // same handler as the Document menu's "Show/Hide validity" item) to
+      // the stock toolbar.
+      toolbarData : 'undo redo | '
+        + 'styles bold italic | '
+        + 'alignleft aligncenter alignright outdent indent | '
+        + 'numlist bullist | '
+        + 'validate',
       menuData : {
         // Trim the stock File menu (which otherwise includes Save As, Delete
         // a document, Embed document, and Export LaTeX) down to just the

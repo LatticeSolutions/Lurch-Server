@@ -1,5 +1,0 @@
-{
-  "name": "Lurch Notation",
-  "scopeName": "source.lurch-notation",
-  "patterns": [ { "include": "source.peggy" } ]
-}

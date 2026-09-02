@@ -1,4 +1,0 @@
-
-// Declare the logical connectives as constants:
-
-:[and or not implies iff const]

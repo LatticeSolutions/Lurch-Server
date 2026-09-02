@@ -130,7 +130,12 @@ window.Lurch = {
      *    To see which keys and values are available, see
      *    {@link LurchDocument.settingsMetadata the document settings metadata}
      *    in the {@link LurchDocument} class.
-     * 
+     *  - `options.instructorMode` enables or disables the Instructor menu (editing
+     *    dependency URLs, viewing the document's raw code, and the grading pen text
+     *    style).  This is `false` by default, and is intended to be set based on
+     *    the current user's role (e.g., an instructor/admin vs. a student), as
+     *    determined by the host application.
+     *
      * The `options` object is stored as an `appOptions` member in the TinyMCE
      * editor instance once it is created, so that any part of the app can refer
      * back to these options later.
@@ -153,6 +158,7 @@ window.Lurch = {
             editor : { },
             preventLeaving : !isEmbedded(),
             autoSaveEnabled : !isEmbedded(),
+            instructorMode : false,
             toolbarData : 'undo redo | '
                 + 'styles bold italic | '
                 //   + 'link unlink | ' // reduce toolbar clutter
@@ -228,12 +234,12 @@ window.Lurch = {
             element.setAttribute( 'id', 'editor' )
         }
 
-        // If developer mode is enabled in settings, create the Developer menu
-        // if ( appSettings.get( 'developer mode on' ) === true )
-        //     menuData.developer = buildMenu( 'Instructor',
-        //        'editdependencyurls',
-        //        'viewdocumentcode redpen'
-        //     )
+        // If instructor mode is enabled, create the Instructor menu
+        if ( options.instructorMode )
+            menuData.developer = buildMenu( 'Instructor',
+                'editdependencyurls',
+                'viewdocumentcode redpen'
+            )
 
         // Add any help pages from the options object to a new help menu.
         // Further below, during editor initialization, we will install menu

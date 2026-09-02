@@ -1,6 +1,12 @@
 Rails.application.routes.draw do
   devise_for :users
-  resources :documents, except: [ :edit ]
+  resources :documents, except: [ :edit ] do
+    member do
+      patch :publish
+      patch :unpublish
+    end
+    get "public", on: :collection, action: :public_documents
+  end
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
 
   # Reveal health status on /up that returns 200 if the app boots with no exceptions, otherwise 500.

@@ -8,6 +8,8 @@ class Ability
       can :manage, :all
     else
       can :manage, Document, user_id: user.id
+      cannot [ :publish, :unpublish ], Document
+      can :read, Document, visibility: "published"
     end
   end
 end

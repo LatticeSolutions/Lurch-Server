@@ -1,9 +1,9 @@
 class DocumentsController < ApplicationController
   before_action :authenticate_user!
 
-  load_resource
+  load_resource except: :public_documents
   before_action :assign_current_user, only: %i[ new create ]
-  authorize_resource
+  authorize_resource except: :public_documents
 
   # GET /documents or /documents.json
   def index
@@ -11,6 +11,23 @@ class DocumentsController < ApplicationController
 
   # GET /documents/1 or /documents/1.json
   def show
+  end
+
+  # GET /documents/public or /documents/public.json
+  def public_documents
+    @documents = Document.published.order(:title)
+  end
+
+  # PATCH /documents/1/publish
+  def publish
+    @document.published!
+    redirect_to documents_path, notice: "Document published."
+  end
+
+  # PATCH /documents/1/unpublish
+  def unpublish
+    @document.restricted!
+    redirect_to documents_path, notice: "Document made private."
   end
 
   # GET /documents/new

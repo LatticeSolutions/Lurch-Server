@@ -9,3 +9,9 @@ two:
   title: MyString
   content: MyText
   user: regular
+
+published_one:
+  title: PublicDoc
+  content: MyText
+  user: regular
+  visibility: published

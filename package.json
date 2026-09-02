@@ -5,9 +5,15 @@
     "esbuild": "^0.28.2"
   },
   "scripts": {
-    "build": "esbuild app/javascript/*.* --bundle --sourcemap --format=esm --outdir=app/assets/builds --public-path=/assets"
+    "build": "esbuild app/javascript/*.* --bundle --sourcemap --format=esm --outdir=app/assets/builds --public-path=/assets",
+    "postinstall": "node bin/vendor-lurch.mjs"
   },
   "dependencies": {
     "@hotwired/turbo-rails": "^8.0.23"
+  },
+  "lurchSource": {
+    "comment": "public/lde and public/lurchmath are fetched from this commit by bin/vendor-lurch.mjs (via the postinstall script), not committed to git. Bump `commit` to pull in upstream changes.",
+    "repo": "kenmonks/lurch",
+    "commit": "f74bcd977846c525554409fd107f791054149aef"
   }
 }

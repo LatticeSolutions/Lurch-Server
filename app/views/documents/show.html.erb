@@ -30,7 +30,6 @@
   window.addEventListener( "load", () => {
     Lurch.createApp( document.getElementById( "editor-container" ), {
       appRoot : "/lurchmath",
-      instructorMode : <%= current_user.admin?.to_json %>,
       preventLeaving : false,
       autoSaveEnabled : false,
       // editor.js unconditionally appends to menuData.help.items, which is

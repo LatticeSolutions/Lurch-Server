@@ -38,3 +38,7 @@
 !/app/assets/builds/.keep
 
 /node_modules
+
+# Fetched from GitHub (kenmonks/lurch) by npm/bin/vendor-lurch.mjs, see package.json
+/public/lde
+/public/lurchmath

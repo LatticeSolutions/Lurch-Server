@@ -35,13 +35,22 @@
       // editor.js unconditionally appends to menuData.help.items, which is
       // only initialized if at least one help page is supplied.
       helpPages : [ { title : "Getting Started", url : "https://about.lurch.plus/getting-started" } ],
-      // Trim the stock File menu (which otherwise includes Save As, Delete a
-      // document, Embed document, and Export LaTeX) down to just the items
-      // wired to this app's own Rails actions, plus Print.
+      // Always show the "meaning" (boxed) view of environments, rather than
+      // the vendor default "minimal" presentation view.
+      appDefaults : { 'default shell style' : 'boxed' },
+      documentDefaults : { 'shell style' : 'boxed' },
       menuData : {
+        // Trim the stock File menu (which otherwise includes Save As, Delete
+        // a document, Embed document, and Export LaTeX) down to just the
+        // items wired to this app's own Rails actions, plus Print.
         file : {
           title : 'File',
           items : 'newlurchdocument opendocument savedocument duplicatedocument | print | closedocument'
+        },
+        // Drop "Show/Hide meaning" since meaning is always shown now.
+        document : {
+          title : 'Document',
+          items : 'viewcontext validate | docsettings'
         }
       }
     } ).then( editor => {

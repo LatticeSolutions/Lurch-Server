@@ -124,10 +124,49 @@
         editor.getBody().querySelector( '#context' )?.remove()
       }
 
+      // Shared by the manual "Save" menu item and the periodic autosave timer
+      // below. Callers decide what (if any) user-visible feedback to show.
+      const saveDocument = () => {
+        const content = new LurchDocument( editor ).getDocument( '' )
+        return fetch( `/documents/${documentId}.json`, {
+          method : 'PATCH',
+          headers : {
+            'Content-Type' : 'application/json',
+            'Accept' : 'application/json',
+            'X-CSRF-Token' : csrfToken()
+          },
+          body : JSON.stringify( { document : { content } } )
+        } ).then( response => {
+          if ( !response.ok ) throw new Error( response.statusText )
+          editor.setDirty( false )
+        } )
+      }
+
       editor.on( "init", () => {
         new LurchDocument( editor ).setDocument( <%= @document.content.to_json.html_safe %> )
         applyContext( initialContext )
-        if ( !canEdit ) editor.mode.set( 'readonly' )
+        if ( !canEdit ) {
+          editor.mode.set( 'readonly' )
+        } else {
+          // Periodically save to the server while there are unsaved changes,
+          // so work isn't lost if the user forgets to save manually. Stays
+          // silent on success; after 3 consecutive failures, warns the user
+          // once that autosave isn't working (the counter then resets on the
+          // next success, so a later failing streak warns again).
+          let autosaveFailures = 0
+          setInterval( () => {
+            if ( !editor.isDirty() ) return
+            saveDocument().then( () => {
+              autosaveFailures = 0
+            } ).catch( error => {
+              console.error( error )
+              autosaveFailures++
+              if ( autosaveFailures === 3 )
+                Dialog.notify( editor, 'error',
+                  'Autosave is not working. Your changes are not being saved -- please save manually.' )
+            } )
+          }, 10000 )
+        }
       } )
 
       // Replace the file-system-backed New/Open/Save menu items (which target
@@ -154,25 +193,12 @@
         text : 'Save',
         tooltip : 'Save document',
         shortcut : 'Alt+S',
-        onAction : () => {
-          const content = new LurchDocument( editor ).getDocument( '' )
-          fetch( `/documents/${documentId}.json`, {
-            method : 'PATCH',
-            headers : {
-              'Content-Type' : 'application/json',
-              'Accept' : 'application/json',
-              'X-CSRF-Token' : csrfToken()
-            },
-            body : JSON.stringify( { document : { content } } )
-          } ).then( response => {
-            if ( !response.ok ) throw new Error( response.statusText )
-            editor.setDirty( false )
-            Dialog.notify( editor, 'success', 'Document saved.' )
-          } ).catch( error => {
-            Dialog.notify( editor, 'error', 'Could not save the document.' )
-            console.error( error )
-          } )
-        }
+        onAction : () => saveDocument().then( () => {
+          Dialog.notify( editor, 'success', 'Document saved.' )
+        } ).catch( error => {
+          Dialog.notify( editor, 'error', 'Could not save the document.' )
+          console.error( error )
+        } )
       } )
       editor.ui.registry.addMenuItem( 'duplicatedocument', {
         text : 'Duplicate',

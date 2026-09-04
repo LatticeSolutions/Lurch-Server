@@ -8,14 +8,14 @@
   <div id="documents" class="min-w-full divide-y divide-gray-200 space-y-5 my-4">
     <% if @documents.any? %>
       <ul class="list-disc ml-6">
-      <% @documents.each do |document| %>
+      <% @documents.order(:title).each do |document| %>
         <li>
           <%= document.title %>
           <% if document.user != current_user %>
-            <span class="text-sm text-gray-600">(<%= document.user.email %>)</span>
+            <span class="text-sm text-sky-800 rounded-sm px-1 bg-sky-200"><%= document.user.email %></span>
           <% end %>
           <% if document.published? %>
-            <span class="text-sm text-gray-600">(Public)</span>
+            <span class="text-sm text-green-600 rounded-sm px-1 bg-green-100">Published</span>
           <% end %>
           <%= link_to "View", document, class: "text-sky-600 hover:underline mx-4", data: { turbo: false } %>
           <% if can? :publish, document %>
@@ -25,7 +25,7 @@
               <%= button_to "Publish", publish_document_path(document), method: :patch, class: "text-sky-600 hover:underline cursor-pointer mr-4", form_class: "inline-block" %>
             <% end %>
           <% end %>
-          <% if can? :destroy, document %>
+          <% if can? :destroy, document and !document.published? %>
             <%= button_to "Destroy", document, method: :delete, class: "text-red-600 hover:underline cursor-pointer", form_class: "inline-block", data: { turbo_confirm: "Are you sure?" } %>
           <% end %>
         </li>

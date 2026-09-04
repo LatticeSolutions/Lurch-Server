@@ -219,9 +219,12 @@ export default class extends Controller {
       onAction: () => this.duplicateDocument()
     } )
     editor.ui.registry.addMenuItem( "closedocument", {
-      text: "Close", icon: "close", tooltip: "Close this document and return to the homepage",
-      onAction: () => this.ensureWorkIsSaved().then( ok => {
-        if ( ok ) window.location.href = "/documents"
+      text: "Save and Close", icon: "close", tooltip: "Save this document and return to the homepage",
+      onAction: () => this.saveDocument().then( () => {
+        window.location.href = "/documents"
+      } ).catch( error => {
+        Dialog.notify( editor, "error", "Could not save the document." )
+        console.error( error )
       } )
     } )
 

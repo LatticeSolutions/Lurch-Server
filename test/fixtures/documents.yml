@@ -15,3 +15,15 @@ published_one:
   content: MyText
   user: regular
   visibility: published
+
+published_two:
+  title: PublicDocTwo
+  content: MyText
+  user: regular
+  visibility: published
+
+published_three:
+  title: PublicDocThree
+  content: MyText
+  user: regular
+  visibility: published

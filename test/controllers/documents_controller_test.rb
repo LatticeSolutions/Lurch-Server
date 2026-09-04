@@ -114,7 +114,23 @@ class DocumentsControllerTest < ActionDispatch::IntegrationTest
     get public_documents_url, as: :json
     assert_response :success
     ids = JSON.parse(response.body).map { |doc| doc["id"] }
-    assert_equal [ documents(:published_one).id ], ids
+    expected = [ documents(:published_one), documents(:published_two), documents(:published_three) ].map(&:id)
+    assert_equal expected.sort, ids.sort
+  end
+
+  test "public_documents excludes candidates that would close a cycle" do
+    a = documents(:published_one)
+    b = documents(:published_two)
+    a.update!(context_document_ids: [ b.id ])
+
+    sign_in users(:other)
+    get public_documents_url(excluding: b.id), as: :json
+    assert_response :success
+    ids = JSON.parse(response.body).map { |doc| doc["id"] }
+
+    assert_not_includes ids, a.id
+    assert_not_includes ids, b.id
+    assert_includes ids, documents(:published_three).id
   end
 
   test "owner can set context on their own document" do

@@ -16,6 +16,9 @@ class DocumentsController < ApplicationController
   # GET /documents/public or /documents/public.json
   def public_documents
     @documents = Document.published.order(:title)
+    if (current = Document.find_by(id: params[:excluding]))
+      @documents = @documents.reject { |d| d.id == current.id || d.transitively_depends_on?(current) }
+    end
   end
 
   # PATCH /documents/1/publish
@@ -33,7 +36,8 @@ class DocumentsController < ApplicationController
   # PATCH /documents/1/context
   def context
     if @document.update(context_params)
-      render json: { context_document_ids: @document.context_document_ids }
+      render json: { context_document_ids: @document.context_document_ids,
+                     context_documents: @document.context_documents_tree }
     else
       render json: @document.errors, status: :unprocessable_content
     end

@@ -2,7 +2,6 @@ import { Controller } from "@hotwired/stimulus"
 import { LurchDocument } from "/lurchmath/lurch-document.js"
 import { Dialog, CheckBoxItem, AlertItem } from "/lurchmath/dialog.js"
 import { getHeader, setHeader } from "/lurchmath/header-editor.js"
-import { Dependency } from "/lurchmath/dependencies.js"
 import { Atom } from "/lurchmath/atoms.js"
 
 // Renders the Lurch document editor -- a vendored, non-npm third-party
@@ -116,8 +115,14 @@ export default class extends Controller {
   }
 
   // Rebuild the document header's Dependency atoms from a list of
-  // { id, title, owner, content } context documents, replacing whatever
-  // dependency atoms are currently there.
+  // { id, title, owner, content, context_documents } context documents,
+  // replacing whatever dependency atoms are currently there. Each entry's
+  // own context_documents is recursed into, so a nested chain (A depends on
+  // B, B depends on C) is concatenated the same way the vendor's own
+  // URL-based dependency mechanism concatenates nested external files: each
+  // dependency atom's "content" metadata holds the *entire* nested document
+  // (its own #metadata/header, with its own nested dependency atoms, plus
+  // its #document body) verbatim, all the way down.
   applyContext( documents ) {
     const editor = this.editor
     let header = getHeader( editor )
@@ -125,22 +130,36 @@ export default class extends Controller {
       setHeader( editor, "" )
       header = getHeader( editor )
     }
-    Dependency.topLevelDependenciesIn( header, editor ).forEach(
-      atom => atom.element.remove() )
-    documents.forEach( doc => {
-      const dependency = Atom.newBlock( editor, "", {
-        type: "dependency",
-        description: "none",
-        filename: doc.title,
-        source: "Public Documents",
-        autoRefresh: false
-      } )
-      dependency.setHTMLMetadata( "content", doc.content )
-      dependency.update()
-      header.appendChild( dependency.element )
-    } )
+    header.innerHTML = documents.map( doc => this.buildDependencyAtomHTML( doc ) ).join( "" )
     setHeader( editor, header.innerHTML )
     editor.getBody().querySelector( "#context" )?.remove()
+  }
+
+  // Build one dependency atom (as an HTML string) for `doc`, recursively
+  // embedding its own context documents as a nested document inside the
+  // atom's "content" metadata -- see applyContext() above.
+  buildDependencyAtomHTML( doc ) {
+    const editor = this.editor
+    const nestedHeaderHTML = ( doc.context_documents || [] )
+      .map( nested => this.buildDependencyAtomHTML( nested ) )
+      .join( "" )
+    const body = doc.content
+      ? ( LurchDocument.documentParts( doc.content ).document?.innerHTML ?? doc.content )
+      : ""
+    const nestedDocumentHTML =
+      `<div id="metadata" style="display: none;">`
+      + `<div data-category="main" data-key="header" data-value-type="html">${nestedHeaderHTML}</div>`
+      + `</div><div id="document">${body}</div>`
+    const dependency = Atom.newBlock( editor, "", {
+      type: "dependency",
+      description: "none",
+      filename: doc.title,
+      source: "Public Documents",
+      autoRefresh: false
+    } )
+    dependency.setHTMLMetadata( "content", nestedDocumentHTML )
+    dependency.update()
+    return dependency.element.outerHTML
   }
 
   saveDocument() {
@@ -240,13 +259,15 @@ export default class extends Controller {
   // URL-based) with one offering only this app's public documents.
   openContextPicker() {
     const editor = this.editor
-    fetch( "/documents/public.json", {
+    fetch( `/documents/public.json?excluding=${encodeURIComponent( this.idValue )}`, {
       headers: { "Accept": "application/json" }
     } ).then( response => {
       if ( !response.ok ) throw new Error( response.statusText )
       return response.json()
     } ).then( publicDocuments => {
-      // A document can't depend on itself.
+      // A document can't depend on itself (the server already excludes any
+      // candidate that would form a cycle, via ?excluding= above; this is
+      // just a cheap belt-and-braces check for the direct self case).
       publicDocuments = publicDocuments.filter( doc => doc.id !== this.idValue )
       const dialog = new Dialog( "Add or remove context", editor )
       dialog.json.size = "medium"
@@ -274,15 +295,13 @@ export default class extends Controller {
           body: JSON.stringify( { document: { context_document_ids: selectedIds } } )
         } ).then( response => {
           if ( !response.ok ) throw new Error( response.statusText )
+          return response.json()
+        } ).then( json => {
           this.currentContextIds = selectedIds
-          // Refresh the live header without requiring a page reload.
-          return Promise.all( selectedIds.map( id =>
-            fetch( `/documents/${id}.json`, {
-              headers: { "Accept": "application/json" }
-            } ).then( response => response.json() )
-          ) )
-        } ).then( selectedDocuments => {
-          this.applyContext( selectedDocuments )
+          // Refresh the live header without requiring a page reload, using
+          // the fully-resolved (recursively nested) tree the server just
+          // returned -- no follow-up per-document fetches needed.
+          this.applyContext( json.context_documents )
           Dialog.notify( editor, "success", "Updated this document's context." )
         } ).catch( error => {
           Dialog.notify( editor, "error", "Could not update this document's context." )

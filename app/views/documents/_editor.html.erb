@@ -1,6 +1,20 @@
 <link rel="stylesheet" href="/lurchmath/main-app-styles.css">
 
-<%= content_tag :div, "Loading editor...",
+<style>
+  /* The vendor's own app expects #editor-container to fill the whole
+     viewport (height: 100vh in main-app-styles.css). Here it sits below
+     this app's sticky header and page title (and sometimes a flash
+     notice/alert banner), so bound it to the space actually left, with
+     enough slack to absorb that banner -- TinyMCE itself already fills
+     this height (see editor.js's `height: "100%"`) and scrolls its own
+     content internally. */
+  #editor-container {
+    height: calc(100vh - 220px);
+    margin-bottom: 1rem;
+  }
+</style>
+
+<%= content_tag :div,
       id: "editor-container",
       data: {
         controller: "document-editor",
@@ -9,6 +23,8 @@
         document_editor_can_edit_value: can_edit,
         document_editor_content_value: @document.content,
         document_editor_context_value: @document.context_documents_tree
-      } %>
+      } do %>
+  <%= content_tag :div, "Loading editor...", data: { document_editor_target: "loading" } %>
+<% end %>
 
 <script type="module" src="/lurchmath/editor.js"></script>

@@ -11,6 +11,8 @@ import { Atom } from "/lurchmath/atoms.js"
 // save/duplicate/context. See app/views/documents/show.html.erb.
 /* global Lurch */
 export default class extends Controller {
+  static targets = [ "loading" ]
+
   static values = {
     id: String,
     title: String,
@@ -81,6 +83,7 @@ export default class extends Controller {
     const editor = this.editor
 
     editor.on( "init", () => {
+      this.loadingTarget.remove()
       new LurchDocument( editor ).setDocument( this.contentValue )
       this.applyContext( this.contextValue )
       if ( !this.canEditValue ) {

@@ -1,5 +1,17 @@
 Rails.application.routes.draw do
   devise_for :users
+
+  # Vendored public/lurchmath/math-live.js resolves the MathLive stylesheet URL
+  # as a bare relative path ('../lde/dependencies/mathlive/mathlive-static.css'),
+  # which the browser resolves against the *page* URL rather than the script's
+  # own URL. On /documents/:id/edit this resolves to
+  # /documents/lde/dependencies/mathlive/mathlive-static.css instead of
+  # /lde/dependencies/mathlive/mathlive-static.css, 404ing (it works fine on
+  # /documents/:id, the read-only view, where the math happens to resolve
+  # correctly). Redirect the broken path to where the file actually lives.
+  # TODO: remove once fixed upstream in kenmonks/lurch.
+  get "documents/lde/*path", to: redirect { |params, _req| "/lde/#{params[:path]}" }, format: false
+
   resources :documents do
     member do
       patch :publish

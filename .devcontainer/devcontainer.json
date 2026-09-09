@@ -35,5 +35,10 @@
 
 
   // Use 'postCreateCommand' to run commands after the container is created.
-  "postCreateCommand": "bin/setup --skip-server"
+  "postCreateCommand": "bin/setup --skip-server",
+
+  // Rerun setup on every container start (it's idempotent) so a transient
+  // failure at creation time (e.g. gem extensions still finalizing) self-heals
+  // on the next start/reconnect instead of leaving the codespace broken.
+  "postStartCommand": "bin/setup --skip-server"
 }

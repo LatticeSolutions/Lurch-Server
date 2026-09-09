@@ -11,6 +11,9 @@
   <% if can? :edit, @document %>
     <%= link_to "Edit", edit_document_path(@document), class: "text-sm text-sky-600 hover:underline ml-2", data: { turbo: false } %>
   <% end %>
+  <% if can? :duplicate, @document %>
+    <%= button_to "Duplicate", duplicate_document_path(@document), method: :post, class: "text-sm text-sky-600 hover:underline cursor-pointer ml-2", form_class: "inline-block" %>
+  <% end %>
 </h1>
 
 <%= render "editor", can_edit: false %>

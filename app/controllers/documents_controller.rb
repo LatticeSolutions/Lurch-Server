@@ -47,6 +47,20 @@ class DocumentsController < ApplicationController
     end
   end
 
+  # POST /documents/1/duplicate
+  def duplicate
+    @new_document = @document.dup
+    @new_document.user = current_user
+    @new_document.visibility = :restricted
+    @new_document.save!
+
+    @document.document_contexts.each do |dc|
+      @new_document.document_contexts.create!(context_document_id: dc.context_document_id)
+    end
+
+    redirect_to edit_document_path(@new_document), notice: "Document duplicated."
+  end
+
   # GET /documents/new
   def new
   end

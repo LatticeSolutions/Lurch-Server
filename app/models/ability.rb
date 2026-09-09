@@ -9,7 +9,7 @@ class Ability
     else
       can :manage, Document, user_id: user.id
       cannot [ :publish, :unpublish ], Document
-      can :read, Document, visibility: "published"
+      can [ :read, :duplicate ], Document, visibility: "published"
     end
   end
 end

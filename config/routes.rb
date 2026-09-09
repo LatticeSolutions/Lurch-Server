@@ -5,6 +5,7 @@ Rails.application.routes.draw do
       patch :publish
       patch :unpublish
       patch :context
+      post :duplicate
     end
     get "public", on: :collection, action: :public_documents
   end

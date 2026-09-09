@@ -166,4 +166,60 @@ class DocumentsControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_equal [ target.id ], @document.reload.context_document_ids
   end
+
+  test "owner can duplicate their own document" do
+    assert_difference("Document.count", 1) do
+      post duplicate_document_url(@document)
+    end
+
+    new_document = Document.last
+    assert_equal users(:regular), new_document.user
+    assert new_document.restricted?
+    assert_equal @document.title, new_document.title
+    assert_equal @document.content, new_document.content
+    assert_redirected_to edit_document_url(new_document)
+  end
+
+  test "duplicating a document carries over its context documents" do
+    target = documents(:published_one)
+    @document.update!(context_document_ids: [ target.id ])
+
+    post duplicate_document_url(@document)
+
+    new_document = Document.last
+    assert_equal [ target.id ], new_document.context_document_ids
+  end
+
+  test "a non-owner can duplicate a published document" do
+    published = documents(:published_one)
+    sign_in users(:other)
+
+    assert_difference("Document.count", 1) do
+      post duplicate_document_url(published)
+    end
+
+    new_document = Document.last
+    assert_equal users(:other), new_document.user
+    assert new_document.restricted?
+  end
+
+  test "a non-owner cannot duplicate a non-published document" do
+    sign_in users(:other)
+
+    assert_no_difference("Document.count") do
+      post duplicate_document_url(@document)
+    end
+    assert_redirected_to root_url
+  end
+
+  test "an admin can duplicate another user's document" do
+    sign_in users(:admin)
+
+    assert_difference("Document.count", 1) do
+      post duplicate_document_url(@document)
+    end
+
+    new_document = Document.last
+    assert_equal users(:admin), new_document.user
+  end
 end

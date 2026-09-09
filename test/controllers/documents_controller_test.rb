@@ -30,6 +30,17 @@ class DocumentsControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
   end
 
+  test "should get edit" do
+    get edit_document_url(@document)
+    assert_response :success
+  end
+
+  test "a non-owner cannot get edit" do
+    sign_in users(:other)
+    get edit_document_url(@document)
+    assert_redirected_to root_url
+  end
+
   test "should update document" do
     patch document_url(@document), params: { document: { content: @document.content, title: @document.title } }
     assert_redirected_to document_url(@document)

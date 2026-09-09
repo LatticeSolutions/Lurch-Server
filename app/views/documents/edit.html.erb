@@ -1,0 +1,7 @@
+<% content_for :title, "Edit: #{@document.title}" %>
+
+<h1 class="my-5 text-xl font-thin">
+  Editing: <%= @document.title %>
+</h1>
+
+<%= render "editor", can_edit: true %>

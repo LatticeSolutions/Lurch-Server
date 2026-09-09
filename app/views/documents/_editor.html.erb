@@ -1,0 +1,14 @@
+<link rel="stylesheet" href="/lurchmath/main-app-styles.css">
+
+<%= content_tag :div, "Loading editor...",
+      id: "editor-container",
+      data: {
+        controller: "document-editor",
+        document_editor_id_value: @document.id,
+        document_editor_title_value: @document.title,
+        document_editor_can_edit_value: can_edit,
+        document_editor_content_value: @document.content,
+        document_editor_context_value: @document.context_documents_tree
+      } %>
+
+<script type="module" src="/lurchmath/editor.js"></script>

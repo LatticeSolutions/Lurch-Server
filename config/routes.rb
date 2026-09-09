@@ -1,6 +1,6 @@
 Rails.application.routes.draw do
   devise_for :users
-  resources :documents, except: [ :edit ] do
+  resources :documents do
     member do
       patch :publish
       patch :unpublish

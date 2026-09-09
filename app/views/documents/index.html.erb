@@ -17,16 +17,19 @@
           <% if document.published? %>
             <span class="text-sm text-green-600 rounded-sm px-1 bg-green-100">Published</span>
           <% end %>
-          <%= link_to "View", document, class: "text-sky-600 hover:underline mx-4", data: { turbo: false } %>
+          <%= link_to "View", document, class: "text-sky-600 hover:underline ml-2", data: { turbo: false } %>
+          <% if can? :edit, document %>
+            <%= link_to "Edit", edit_document_path(document), class: "text-sky-600 hover:underline ml-2", data: { turbo: false } %>
+          <% end %>
           <% if can? :publish, document %>
             <% if document.published? %>
-              <%= button_to "Unpublish", unpublish_document_path(document), method: :patch, class: "text-sky-600 hover:underline cursor-pointer mr-4", form_class: "inline-block" %>
+              <%= button_to "Unpublish", unpublish_document_path(document), method: :patch, class: "text-sky-600 hover:underline cursor-pointer ml-2", form_class: "inline-block" %>
             <% else %>
-              <%= button_to "Publish", publish_document_path(document), method: :patch, class: "text-sky-600 hover:underline cursor-pointer mr-4", form_class: "inline-block" %>
+              <%= button_to "Publish", publish_document_path(document), method: :patch, class: "text-sky-600 hover:underline cursor-pointer ml-2", form_class: "inline-block" %>
             <% end %>
           <% end %>
           <% if can? :destroy, document and !document.published? %>
-            <%= button_to "Destroy", document, method: :delete, class: "text-red-600 hover:underline cursor-pointer", form_class: "inline-block", data: { turbo_confirm: "Are you sure?" } %>
+            <%= button_to "Destroy", document, method: :delete, class: "text-red-600 hover:underline cursor-pointer ml-2", form_class: "inline-block", data: { turbo_confirm: "Are you sure?" } %>
           <% end %>
         </li>
       <% end %>

@@ -13,6 +13,10 @@ class DocumentsController < ApplicationController
   def show
   end
 
+  # GET /documents/1/edit
+  def edit
+  end
+
   # GET /documents/public or /documents/public.json
   def public_documents
     @documents = Document.published.order(:title)
@@ -51,7 +55,7 @@ class DocumentsController < ApplicationController
   def create
     respond_to do |format|
       if @document.save
-        format.html { redirect_to @document, notice: "Document was successfully created." }
+        format.html { redirect_to edit_document_path(@document), notice: "Document was successfully created." }
         format.json { render :show, status: :created, location: @document }
       else
         format.html { render :new, status: :unprocessable_content }

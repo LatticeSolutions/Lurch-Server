@@ -68,7 +68,7 @@ export default class extends Controller {
           title: "Document",
           items: "viewcontext"
             + ( this.canEditValue ? " editdependencyurls" : "" )
-            + " validate | docsettings"
+            + " | docsettings"
         }
       }
     } ).then( editor => {

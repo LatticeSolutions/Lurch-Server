@@ -1,6 +1,6 @@
 import { Controller } from "@hotwired/stimulus"
 import { LurchDocument } from "/lurchmath/lurch-document.js"
-import { Dialog, CheckBoxItem, AlertItem } from "/lurchmath/dialog.js"
+import { Dialog, CheckBoxItem, AlertItem, TextInputItem } from "/lurchmath/dialog.js"
 import { getHeader, setHeader } from "/lurchmath/header-editor.js"
 import { Atom } from "/lurchmath/atoms.js"
 
@@ -64,13 +64,11 @@ export default class extends Controller {
       menuData: {
         file: {
           title: "File",
-          items: "newlurchdocument opendocument savedocument duplicatedocument | print | closedocument"
+          items: "newlurchdocument opendocument savedocument duplicatedocument | renamedocument | print | closedocument"
         },
         document: {
           title: "Document",
-          items: "viewcontext"
-            + ( this.canEditValue ? " editdependencyurls" : "" )
-            + " | docsettings"
+          items: "viewcontext editdependencyurls | docsettings"
         }
       }
     } ).then( editor => {
@@ -232,11 +230,47 @@ export default class extends Controller {
     } )
 
     if ( this.canEditValue ) {
+      editor.ui.registry.addMenuItem( "renamedocument", {
+        text: "Rename", tooltip: "Change this document's title",
+        onAction: () => this.renameDocument()
+      } )
       editor.ui.registry.addMenuItem( "editdependencyurls", {
         text: "Add or remove context", tooltip: "Choose which public documents this one depends on", icon: "edit-block",
         onAction: () => this.openContextPicker()
       } )
     }
+  }
+
+  renameDocument() {
+    const editor = this.editor
+    const dialog = new Dialog( "Rename document", editor )
+    dialog.addItem( new TextInputItem( "title", "Title" ) )
+    dialog.setDefaultFocus( "title" )
+    dialog.setInitialData( { title: this.titleValue } )
+    dialog.show().then( userHitOK => {
+      if ( !userHitOK ) return
+      const title = dialog.get( "title" ).trim()
+      if ( !title || title === this.titleValue ) return
+      fetch( `/documents/${this.idValue}.json`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          "Accept": "application/json",
+          "X-CSRF-Token": this.csrfToken()
+        },
+        body: JSON.stringify( { document: { title } } )
+      } ).then( response => {
+        if ( !response.ok ) throw new Error( response.statusText )
+        this.titleValue = title
+        document.title = `Edit: ${title}`
+        const heading = document.getElementById( "document-title" )
+        if ( heading ) heading.textContent = `Editing: ${title}`
+        Dialog.notify( editor, "success", "Document renamed." )
+      } ).catch( error => {
+        Dialog.notify( editor, "error", "Could not rename the document." )
+        console.error( error )
+      } )
+    } )
   }
 
   duplicateDocument() {

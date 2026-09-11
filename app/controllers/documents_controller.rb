@@ -50,6 +50,7 @@ class DocumentsController < ApplicationController
   # POST /documents/1/duplicate
   def duplicate
     @new_document = @document.dup
+    @new_document.title = "#{@document.title} (Copy)"
     @new_document.user = current_user
     @new_document.visibility = :restricted
     @new_document.save!

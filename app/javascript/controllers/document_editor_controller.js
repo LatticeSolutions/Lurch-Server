@@ -61,6 +61,13 @@ export default class extends Controller {
         + "alignleft aligncenter alignright outdent indent | "
         + "numlist bullist | "
         + "validate",
+      // The vendor's default `plugins` list omits `fullscreen`, even though
+      // it wires up "Enter/Exit fullscreen" context-menu items that call
+      // TinyMCE's `mceFullScreen` command -- without this plugin loaded,
+      // that command doesn't exist and those items silently do nothing.
+      editor: {
+        plugins: "lists link contextmenu fullscreen"
+      },
       menuData: {
         file: {
           title: "File",

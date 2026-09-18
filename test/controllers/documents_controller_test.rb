@@ -22,7 +22,7 @@ class DocumentsControllerTest < ActionDispatch::IntegrationTest
     end
 
     assert_equal users(:regular), Document.last.user
-    assert_redirected_to document_url(Document.last)
+    assert_redirected_to edit_document_url(Document.last)
   end
 
   test "should show document" do
@@ -175,7 +175,7 @@ class DocumentsControllerTest < ActionDispatch::IntegrationTest
     new_document = Document.last
     assert_equal users(:regular), new_document.user
     assert new_document.restricted?
-    assert_equal @document.title, new_document.title
+    assert_equal "#{@document.title} (Copy)", new_document.title
     assert_equal @document.content, new_document.content
     assert_redirected_to edit_document_url(new_document)
   end

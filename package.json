@@ -15,6 +15,6 @@
   "lurchSource": {
     "comment": "public/lde and public/lurchmath are fetched from this commit by bin/vendor-lurch.mjs (via the postinstall script), not committed to git. Bump `commit` to pull in upstream changes.",
     "repo": "kenmonks/lurch",
-    "commit": "cae5d1abd6dbd52d63c623100705b0fb1e505895"
+    "commit": "084684facfd1003dc011690fa1bf506d0c57a381"
   }
 }

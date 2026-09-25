@@ -1,4 +1,4 @@
-<link rel="stylesheet" href="/lurchmath/main-app-styles.css">
+<link rel="stylesheet" href="<%= lurch_vendor_root %>/lurchmath/main-app-styles.css">
 
 <style>
   /* The vendor's own app expects #editor-container to fill the whole
@@ -22,9 +22,10 @@
         document_editor_title_value: @document.title,
         document_editor_can_edit_value: can_edit,
         document_editor_content_value: @document.content,
-        document_editor_context_value: @document.context_documents_tree
+        document_editor_context_value: @document.context_documents_tree,
+        document_editor_app_root_value: "#{lurch_vendor_root}/lurchmath"
       } do %>
   <%= content_tag :div, "Loading editor...", data: { document_editor_target: "loading" } %>
 <% end %>
 
-<script type="module" src="/lurchmath/editor.js"></script>
+<script type="module" src="<%= lurch_vendor_root %>/lurchmath/editor.js"></script>

@@ -1,9 +1,15 @@
 #!/usr/bin/env node
 
-// Populates public/lde and public/lurchmath from the `lde` and `lurchmath`
-// subdirectories of github.com/kenmonks/lurch, at the commit pinned in
-// package.json's "lurchSource" field. Runs automatically via the
-// "postinstall" npm script.
+// Populates vendor/lurch/<commit>/lde and vendor/lurch/<commit>/lurchmath
+// from the `lde` and `lurchmath` subdirectories of github.com/kenmonks/lurch,
+// at the commit pinned in package.json's "lurchSource" field. Runs
+// automatically via the "postinstall" npm script.
+//
+// The commit is baked into the destination path (rather than vendoring into
+// a fixed `vendor/lurch/lde`) because config/initializers/lurch_vendor.rb
+// serves this directory straight through at a URL that includes the same
+// commit segment (see that file), so that bumping the commit here also
+// changes the public URL and browsers never hold on to a stale cached copy.
 //
 // Fetches a plain HTTPS tarball (GitHub's codeload endpoint) rather than
 // using npm's git-dependency resolution: npm's git+path dependency syntax
@@ -14,7 +20,7 @@
 //
 // Only a curated subset of each upstream directory is needed at runtime in
 // the browser; the rest (tests, docs, build tooling, package.json, etc.) is
-// left out of public/.
+// left out of vendor/.
 
 import { mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, cpSync, writeFileSync } from 'node:fs'
 import { join, dirname } from 'node:path'
@@ -29,6 +35,13 @@ const { lurchSource } = JSON.parse(
 
 const { repo, commit } = lurchSource
 const tarballUrl = `https://codeload.github.com/${repo}/tar.gz/${commit}`
+
+const vendorRoot = join(repoRoot, 'vendor', 'lurch')
+const destRoot = join(vendorRoot, commit)
+
+// Clear out any previously vendored commits so vendor/lurch doesn't
+// accumulate one directory per commit ever bumped to.
+rmSync(vendorRoot, { recursive: true, force: true })
 
 const workDir = mkdtempSync(join(tmpdir(), 'vendor-lurch-'))
 const tarballPath = join(workDir, 'lurch.tar.gz')
@@ -52,8 +65,7 @@ execFileSync('tar', [
 
 const vendor = (name, { includeFile, dirs, filter }) => {
   const src = join(extractDir, name)
-  const dest = join(repoRoot, 'public', name)
-  rmSync(dest, { recursive: true, force: true })
+  const dest = join(destRoot, name)
   mkdirSync(dest, { recursive: true })
 
   for (const dir of dirs) {
@@ -82,4 +94,4 @@ vendor('lurchmath', {
 
 rmSync(workDir, { recursive: true, force: true })
 
-console.log(`Vendored lde and lurchmath from ${repo}@${commit} into public/`)
+console.log(`Vendored lde and lurchmath from ${repo}@${commit} into vendor/lurch/${commit}/`)

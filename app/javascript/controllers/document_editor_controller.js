@@ -5,10 +5,18 @@ import { getHeader, setHeader } from "/lurchmath/header-editor.js"
 import { Atom } from "/lurchmath/atoms.js"
 
 // Renders the Lurch document editor -- a vendored, non-npm third-party
-// library loaded via <script src="/lurchmath/editor.js"> as a side effect
+// library loaded via <script src=".../lurchmath/editor.js"> as a side effect
 // that sets the global `Lurch` (see bin/vendor-lurch.mjs) -- into this
 // controller's own element, and wires it to this app's Rails endpoints for
 // save/duplicate/context. See app/views/documents/show.html.erb.
+//
+// The imports above are written as if the vendored tree were served at a
+// fixed "/lurchmath" URL, but it's actually served at a URL with the
+// vendored commit baked in (see config/initializers/lurch_vendor.rb) --
+// bin/build.mjs rewrites these specifiers to the real, versioned path at
+// build time. (This controller's appRootValue, set from the view, carries
+// that same versioned path to the parts of this file -- and of the vendor's
+// own runtime code -- that need it as a value rather than an import.)
 /* global Lurch */
 export default class extends Controller {
   static targets = [ "loading" ]
@@ -18,7 +26,8 @@ export default class extends Controller {
     title: String,
     canEdit: Boolean,
     content: String,
-    context: Array
+    context: Array,
+    appRoot: String
   }
 
   connect() {
@@ -43,7 +52,7 @@ export default class extends Controller {
 
   startEditor() {
     Lurch.createApp( this.element, {
-      appRoot: "/lurchmath",
+      appRoot: this.appRootValue,
       preventLeaving: false,
       autoSaveEnabled: false,
       // editor.js unconditionally appends to menuData.help.items, which is

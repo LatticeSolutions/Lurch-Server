@@ -36,6 +36,10 @@
 !/app/assets/builds/.keep
 /public/assets
 
+# Ignore the tree fetched by bin/vendor-lurch.mjs -- npm ci (run during the
+# Docker build) regenerates it, so a stale host copy must never shadow that.
+/vendor/lurch
+
 # Ignore CI service files.
 /.github
 

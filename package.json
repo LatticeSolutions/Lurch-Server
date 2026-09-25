@@ -5,7 +5,7 @@
     "esbuild": "^0.28.2"
   },
   "scripts": {
-    "build": "esbuild app/javascript/*.* --bundle --sourcemap --format=esm --outdir=app/assets/builds --public-path=/assets --external:/lurchmath/*",
+    "build": "node bin/build.mjs",
     "postinstall": "node bin/vendor-lurch.mjs"
   },
   "dependencies": {
@@ -13,7 +13,7 @@
     "@hotwired/turbo-rails": "^8.0.23"
   },
   "lurchSource": {
-    "comment": "public/lde and public/lurchmath are fetched from this commit by bin/vendor-lurch.mjs (via the postinstall script), not committed to git. Bump `commit` to pull in upstream changes.",
+    "comment": "vendor/lurch/<commit>/{lde,lurchmath} are fetched from this commit by bin/vendor-lurch.mjs (via the postinstall script), not committed to git. This commit also determines the URL the vendored tree is served at (config/initializers/lurch_vendor.rb) and that bin/build.mjs rewrites this app's own /lurchmath/* imports to. Bump `commit` to pull in upstream changes.",
     "repo": "kenmonks/lurch",
     "commit": "084684facfd1003dc011690fa1bf506d0c57a381"
   }

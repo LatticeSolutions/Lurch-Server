@@ -70,7 +70,7 @@ export default class extends Controller {
       menuData: {
         file: {
           title: "File",
-          items: "newlurchdocument opendocument savedocument duplicatedocument | renamedocument | print | closedocument"
+          items: "newlurchdocument opendocument savedocument duplicatedocument sharelink | renamedocument | print | closedocument"
         },
         document: {
           title: "Document",
@@ -188,6 +188,10 @@ export default class extends Controller {
       text: "Duplicate", icon: "duplicate", tooltip: "Save a copy as a new document",
       onAction: () => this.duplicateDocument()
     } )
+    editor.ui.registry.addMenuItem( "sharelink", {
+      text: "Share link", icon: "link", tooltip: "Copy a link to this document's view page",
+      onAction: () => this.copyShareLink()
+    } )
     editor.ui.registry.addMenuItem( "closedocument", {
       text: "Save and Close", icon: "close", tooltip: "Save this document and return to the homepage",
       onAction: () => this.saveDocument().then( () => {
@@ -237,6 +241,18 @@ export default class extends Controller {
         Dialog.notify( editor, "error", "Could not rename the document." )
         console.error( error )
       } )
+    } )
+  }
+
+  // Copy the URL of this document's read-only view page (the show route).
+  copyShareLink() {
+    const editor = this.editor
+    const url = new URL( `/documents/${this.idValue}`, window.location.origin ).href
+    navigator.clipboard.writeText( url ).then( () => {
+      Dialog.notify( editor, "success", "Link copied to clipboard." )
+    } ).catch( error => {
+      Dialog.notify( editor, "error", "Could not copy the link." )
+      console.error( error )
     } )
   }
 

@@ -6,3 +6,6 @@ import { application } from "./application"
 
 import DocumentEditorController from "./document_editor_controller"
 application.register("document-editor", DocumentEditorController)
+
+import DocumentViewController from "./document_view_controller"
+application.register("document-view", DocumentViewController)

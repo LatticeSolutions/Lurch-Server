@@ -30,6 +30,45 @@ class DocumentsControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
   end
 
+  test "show renders the sanitized document body in a sandboxed iframe, not the editor" do
+    @document.update!(content: <<~HTML)
+      <div id="metadata" style="display: none;"><div data-key="header">SECRET-METADATA</div></div>
+      <div id="document"><p class="lurch-atom" data-metadata_type="x">Hello body</p><script>alert(1)</script></div>
+    HTML
+
+    get document_url(@document)
+    assert_response :success
+    assert_select "[data-controller=document-editor]", count: 0
+    assert_select "iframe[sandbox][data-controller=document-view]" do |(iframe)|
+      srcdoc = iframe["srcdoc"]
+      assert_includes srcdoc, %(<p class="lurch-atom" data-metadata_type="x">Hello body</p>)
+      assert_not_includes srcdoc, "SECRET-METADATA"
+      assert_not_includes srcdoc, "<script"
+      assert_not_includes iframe["sandbox"], "allow-scripts"
+    end
+  end
+
+  test "show keeps MathLive's positioning styles but drops unsafe ones" do
+    @document.update!(content: <<~HTML)
+      <div id="document"><span style="top: -3.41em; position: relative">x</span><span style="background: url(javascript:alert(1)); left: expression(alert(1))">y</span></div>
+    HTML
+
+    get document_url(@document)
+    assert_select "iframe[srcdoc]" do |(iframe)|
+      srcdoc = iframe["srcdoc"]
+      assert_includes srcdoc, %(<span style="top: -3.41em; position: relative;">x</span>)
+      assert_includes srcdoc, "<span>y</span>"
+    end
+  end
+
+  test "show links to the document's context documents" do
+    context_doc = documents(:published_one)
+    @document.update!(context_document_ids: [ context_doc.id ])
+
+    get document_url(@document)
+    assert_select "a[href=?]", document_path(context_doc), text: context_doc.title
+  end
+
   test "should get edit" do
     get edit_document_url(@document)
     assert_response :success

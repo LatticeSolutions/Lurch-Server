@@ -16,4 +16,17 @@
   <% end %>
 </h1>
 
-<%= render "editor", can_edit: false %>
+<% if @document.context_documents.any? %>
+  <p class="mb-3 text-sm">
+    Context:
+    <%= safe_join @document.context_documents.map { |doc| link_to doc.title, doc, class: "text-sky-600 hover:underline" }, ", " %>
+  </p>
+<% end %>
+
+<%# Rendered in a sandboxed iframe (no allow-scripts) so the Lurch content
+    stylesheets don't leak into this page; see DocumentsHelper. %>
+<%= tag.iframe srcdoc: document_view_srcdoc(@document),
+      sandbox: "allow-same-origin allow-popups allow-popups-to-escape-sandbox",
+      title: @document.title,
+      class: "w-full bg-white rounded border-0 mb-4",
+      data: { controller: "document-view" } %>

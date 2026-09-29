@@ -8,7 +8,7 @@ import { Atom } from "/lurchmath/atoms.js"
 // library loaded via <script src="/lurchmath/editor.js"> as a side effect
 // that sets the global `Lurch` (see bin/vendor-lurch.mjs) -- into this
 // controller's own element, and wires it to this app's Rails endpoints for
-// save/duplicate/context. See app/views/documents/show.html.erb.
+// save/duplicate/context. See app/views/documents/edit.html.erb.
 /* global Lurch */
 export default class extends Controller {
   static targets = [ "loading" ]
@@ -16,7 +16,6 @@ export default class extends Controller {
   static values = {
     id: String,
     title: String,
-    canEdit: Boolean,
     content: String,
     context: Array
   }
@@ -91,11 +90,7 @@ export default class extends Controller {
       this.loadingTarget.remove()
       new LurchDocument( editor ).setDocument( this.contentValue )
       this.applyContext( this.contextValue )
-      if ( !this.canEditValue ) {
-        editor.mode.set( "readonly" )
-      } else {
-        this.startAutosave()
-      }
+      this.startAutosave()
     } )
 
     this.registerMenuItems()
@@ -236,16 +231,14 @@ export default class extends Controller {
       } )
     } )
 
-    if ( this.canEditValue ) {
-      editor.ui.registry.addMenuItem( "renamedocument", {
-        text: "Rename", tooltip: "Change this document's title",
-        onAction: () => this.renameDocument()
-      } )
-      editor.ui.registry.addMenuItem( "editdependencyurls", {
-        text: "Add or remove context", tooltip: "Choose which public documents this one depends on", icon: "edit-block",
-        onAction: () => this.openContextPicker()
-      } )
-    }
+    editor.ui.registry.addMenuItem( "renamedocument", {
+      text: "Rename", tooltip: "Change this document's title",
+      onAction: () => this.renameDocument()
+    } )
+    editor.ui.registry.addMenuItem( "editdependencyurls", {
+      text: "Add or remove context", tooltip: "Choose which public documents this one depends on", icon: "edit-block",
+      onAction: () => this.openContextPicker()
+    } )
   }
 
   renameDocument() {

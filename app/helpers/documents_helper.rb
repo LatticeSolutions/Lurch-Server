@@ -68,6 +68,13 @@ module DocumentsHelper
     HTML
   end
 
+  # The raw #metadata part of the content (document settings and header), or
+  # "" if there is none, for the read-only view's validation. It's parsed
+  # inertly client-side and never rendered; see document_view_controller.js.
+  def document_metadata_html(document)
+    Nokogiri::HTML5.fragment(document.content.to_s).at_css("#metadata")&.to_html.to_s
+  end
+
   # The sanitized inner HTML of the content's #document part (falling back to
   # the whole content if there is none, like LurchDocument.documentParts).
   # Rails' `sanitize` would strip the data-* attributes, inline styles and

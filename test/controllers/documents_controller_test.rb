@@ -69,6 +69,22 @@ class DocumentsControllerTest < ActionDispatch::IntegrationTest
     assert_select "a[href=?]", document_path(context_doc), text: context_doc.title
   end
 
+  test "show passes the context tree and metadata to the view's validation" do
+    context_doc = documents(:published_one)
+    @document.update!(context_document_ids: [ context_doc.id ], content: <<~HTML)
+      <div id="metadata" style="display: none;"><div data-category="settings" data-key="notation">"lurch"</div></div>
+      <div id="document"><p>Body</p></div>
+    HTML
+
+    get document_url(@document)
+    assert_select "iframe[data-controller=document-view]" do |(iframe)|
+      context = JSON.parse(iframe["data-document-view-context-value"])
+      assert_equal [ context_doc.title ], context.map { |doc| doc["title"] }
+      assert_includes iframe["data-document-view-metadata-value"], %(data-key="notation")
+      assert_not_includes iframe["data-document-view-metadata-value"], "Body"
+    end
+  end
+
   test "should get edit" do
     get edit_document_url(@document)
     assert_response :success

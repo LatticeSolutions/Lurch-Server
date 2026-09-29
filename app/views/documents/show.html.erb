@@ -29,4 +29,8 @@
       sandbox: "allow-same-origin allow-popups allow-popups-to-escape-sandbox",
       title: @document.title,
       class: "w-full bg-white rounded border-0 mb-4",
-      data: { controller: "document-view" } %>
+      data: {
+        controller: "document-view",
+        document_view_context_value: @document.context_documents_tree,
+        document_view_metadata_value: document_metadata_html(@document)
+      } %>

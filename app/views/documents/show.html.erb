@@ -1,36 +1,40 @@
 <% content_for :title, @document.title %>
 
-<h1 class="my-5 text-xl font-thin">
-  <%= @document.title %>
-  <% if @document.user != current_user %>
-    <span class="text-lg text-gray-600">(<%= @document.user.email %>)</span>
-  <% end %>
-  <% if @document.published? %>
-    <span class="text-lg text-gray-600">(Public)</span>
-  <% end %>
-  <% if can? :edit, @document %>
-    <%= link_to "Edit", edit_document_path(@document), class: "text-sm text-sky-600 hover:underline ml-2", data: { turbo: false } %>
-  <% end %>
-  <% if can? :duplicate, @document %>
-    <%= button_to "Duplicate", duplicate_document_path(@document), method: :post, class: "text-sm text-sky-600 hover:underline cursor-pointer ml-2", form_class: "inline-block", form: { data: { turbo: false } } %>
-  <% end %>
-</h1>
+<%= tag.div data: {
+      controller: "document-view",
+      document_view_context_value: @document.context_documents_tree,
+      document_view_metadata_value: document_metadata_html(@document)
+    } do %>
+  <h1 class="my-5 text-xl font-thin">
+    <%= @document.title %>
+    <%# Shown once the view's validation finds every statement valid. %>
+    <span data-document-view-target="checkmark" hidden class="text-green-600" title="All statements validate" aria-label="All statements validate">✓</span>
+    <% if @document.user != current_user %>
+      <span class="text-lg text-gray-600">(<%= @document.user.email %>)</span>
+    <% end %>
+    <% if @document.published? %>
+      <span class="text-lg text-gray-600">(Public)</span>
+    <% end %>
+    <% if can? :edit, @document %>
+      <%= link_to "Edit", edit_document_path(@document), class: "text-sm text-sky-600 hover:underline ml-2", data: { turbo: false } %>
+    <% end %>
+    <% if can? :duplicate, @document %>
+      <%= button_to "Duplicate", duplicate_document_path(@document), method: :post, class: "text-sm text-sky-600 hover:underline cursor-pointer ml-2", form_class: "inline-block", form: { data: { turbo: false } } %>
+    <% end %>
+  </h1>
 
-<% if @document.context_documents.any? %>
-  <p class="mb-3 text-sm">
-    Context:
-    <%= safe_join @document.context_documents.map { |doc| link_to doc.title, doc, class: "text-sky-600 hover:underline" }, ", " %>
-  </p>
+  <% if @document.context_documents.any? %>
+    <p class="mb-3 text-sm">
+      Context:
+      <%= safe_join @document.context_documents.map { |doc| link_to doc.title, doc, class: "text-sky-600 hover:underline" }, ", " %>
+    </p>
+  <% end %>
+
+  <%# Rendered in a sandboxed iframe (no allow-scripts) so the Lurch content
+      stylesheets don't leak into this page; see DocumentsHelper. %>
+  <%= tag.iframe srcdoc: document_view_srcdoc(@document),
+        sandbox: "allow-same-origin allow-popups allow-popups-to-escape-sandbox",
+        title: @document.title,
+        class: "w-full bg-white rounded border-0 mb-4",
+        data: { document_view_target: "frame" } %>
 <% end %>
-
-<%# Rendered in a sandboxed iframe (no allow-scripts) so the Lurch content
-    stylesheets don't leak into this page; see DocumentsHelper. %>
-<%= tag.iframe srcdoc: document_view_srcdoc(@document),
-      sandbox: "allow-same-origin allow-popups allow-popups-to-escape-sandbox",
-      title: @document.title,
-      class: "w-full bg-white rounded border-0 mb-4",
-      data: {
-        controller: "document-view",
-        document_view_context_value: @document.context_documents_tree,
-        document_view_metadata_value: document_metadata_html(@document)
-      } %>

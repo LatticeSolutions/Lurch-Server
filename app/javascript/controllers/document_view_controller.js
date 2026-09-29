@@ -8,11 +8,14 @@ const MATH_ATOM_TYPES = [ "expression", "expositorymath" ]
 const sleep = ms => new Promise( resolve => setTimeout( resolve, ms ) )
 
 // Drives the read-only view's <iframe srcdoc> (see
-// app/views/documents/show.html.erb): redraws its math, validates it once,
-// and sizes the frame to fit its content so the page scrolls rather than the
-// frame. The frame is sandboxed with allow-same-origin but not allow-scripts,
-// so all of this runs here, reaching into the frame's document from outside.
+// app/views/documents/show.html.erb): redraws its math, validates it once
+// (showing a checkmark by the title if every statement is valid), and sizes
+// the frame to fit its content so the page scrolls rather than the frame.
+// The frame is sandboxed with allow-same-origin but not allow-scripts, so
+// all of this runs here, reaching into the frame's document from outside.
 export default class extends Controller {
+  static targets = [ "frame", "checkmark" ]
+
   static values = {
     context: Array,
     metadata: String
@@ -20,18 +23,18 @@ export default class extends Controller {
 
   connect() {
     this.onLoad = () => this.setUp()
-    this.element.addEventListener( "load", this.onLoad )
-    if ( this.element.contentDocument?.readyState === "complete" ) this.setUp()
+    this.frameTarget.addEventListener( "load", this.onLoad )
+    if ( this.frameTarget.contentDocument?.readyState === "complete" ) this.setUp()
   }
 
   disconnect() {
-    this.element.removeEventListener( "load", this.onLoad )
+    this.frameTarget.removeEventListener( "load", this.onLoad )
     this.observer?.disconnect()
     this.stopValidation?.()
   }
 
   setUp() {
-    const doc = this.element.contentDocument
+    const doc = this.frameTarget.contentDocument
     if ( !doc?.body || doc === this.setUpDocument ) return
     this.setUpDocument = doc
     this.observe( doc.body )
@@ -50,11 +53,11 @@ export default class extends Controller {
   // Measure the body itself rather than the root's scrollHeight, which never
   // drops below the frame's current height and so could only ever grow.
   fit() {
-    const body = this.element.contentDocument?.body
+    const body = this.frameTarget.contentDocument?.body
     if ( !body ) return
     const style = getComputedStyle( body )
     const height = body.offsetHeight + parseFloat( style.marginTop ) + parseFloat( style.marginBottom )
-    this.element.style.height = `${Math.ceil( height )}px`
+    this.frameTarget.style.height = `${Math.ceil( height )}px`
   }
 
   async renderAndValidate( doc ) {
@@ -148,6 +151,7 @@ export default class extends Controller {
         if ( message.element && Atom.isAtomElement( message.element ) )
           Atom.from( message.element, editor ).applyValidationMessage( message )
       } else if ( message.is( "done" ) ) {
+        this.showResult( editor.dom.doc )
         this.stopValidation()
       }
     }
@@ -160,5 +164,16 @@ export default class extends Controller {
     window.addEventListener( "message", onMessage )
 
     Message.document( editor, "putdown" ).send( worker )
+  }
+
+  // Show the title's checkmark iff validation marked at least one statement
+  // and marked every one valid. (Rules, assumptions and declarations get no
+  // marker; an atom's marker can carry several feedback-marker-* classes.)
+  showResult( doc ) {
+    const classes = Array.from( doc.body.querySelectorAll( "[class*=feedback-marker]" ) )
+      .flatMap( marker => Array.from( marker.classList ) )
+      .filter( name => name.startsWith( "feedback-marker-" ) )
+    this.checkmarkTarget.hidden =
+      !( classes.length > 0 && classes.every( name => name === "feedback-marker-valid" ) )
   }
 }

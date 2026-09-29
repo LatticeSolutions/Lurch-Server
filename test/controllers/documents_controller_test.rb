@@ -39,7 +39,7 @@ class DocumentsControllerTest < ActionDispatch::IntegrationTest
     get document_url(@document)
     assert_response :success
     assert_select "[data-controller=document-editor]", count: 0
-    assert_select "iframe[sandbox][data-controller=document-view]" do |(iframe)|
+    assert_select "[data-controller=document-view] iframe[sandbox][data-document-view-target=frame]" do |(iframe)|
       srcdoc = iframe["srcdoc"]
       assert_includes srcdoc, %(<p class="lurch-atom" data-metadata_type="x">Hello body</p>)
       assert_not_includes srcdoc, "SECRET-METADATA"
@@ -77,12 +77,17 @@ class DocumentsControllerTest < ActionDispatch::IntegrationTest
     HTML
 
     get document_url(@document)
-    assert_select "iframe[data-controller=document-view]" do |(iframe)|
-      context = JSON.parse(iframe["data-document-view-context-value"])
+    assert_select "div[data-controller=document-view]" do |(view)|
+      context = JSON.parse(view["data-document-view-context-value"])
       assert_equal [ context_doc.title ], context.map { |doc| doc["title"] }
-      assert_includes iframe["data-document-view-metadata-value"], %(data-key="notation")
-      assert_not_includes iframe["data-document-view-metadata-value"], "Body"
+      assert_includes view["data-document-view-metadata-value"], %(data-key="notation")
+      assert_not_includes view["data-document-view-metadata-value"], "Body"
     end
+  end
+
+  test "show renders a hidden checkmark by the title, for the view's validation to reveal" do
+    get document_url(@document)
+    assert_select "[data-controller=document-view] h1 [data-document-view-target=checkmark][hidden]", text: "✓"
   end
 
   test "should get edit" do

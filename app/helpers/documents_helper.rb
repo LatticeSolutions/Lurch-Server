@@ -72,16 +72,28 @@ module DocumentsHelper
   # "" if there is none, for the read-only view's validation. It's parsed
   # inertly client-side and never rendered; see document_view_controller.js.
   def document_metadata_html(document)
-    Nokogiri::HTML5.fragment(document.content.to_s).at_css("#metadata")&.to_html.to_s
+    document_part(Nokogiri::HTML5.fragment(document.content.to_s), "metadata")&.to_html.to_s
   end
 
   # The sanitized inner HTML of the content's #document part (falling back to
   # the whole content if there is none, like LurchDocument.documentParts).
+  # Any saved #context panel (the vendor's "Mathematical Context" viewer,
+  # which previews context documents) is dropped, as the editor does on load.
   # Rails' `sanitize` would strip the data-* attributes, inline styles and
   # tables that the Lurch stylesheets rely on; see ContentScrubber.
   def document_body_html(document)
     fragment = Nokogiri::HTML5.fragment(document.content.to_s)
-    body = fragment.at_css("#document")&.inner_html || fragment.to_html
+    part = document_part(fragment, "document")
+    (part || fragment).css("#context").each(&:remove)
+    body = part ? part.inner_html : fragment.to_html
     Loofah.html5_fragment(body).scrub!(ContentScrubber.new).to_s
+  end
+
+  # The top-level child of `fragment` with the given id ("metadata" or
+  # "document"), like LurchDocument.documentParts. It must be top-level: the
+  # metadata's header holds context documents' dependency atoms, which embed
+  # each context document's own #metadata and #document.
+  def document_part(fragment, id)
+    fragment.children.find { |node| node.element? && node["id"] == id }
   end
 end

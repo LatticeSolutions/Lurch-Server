@@ -20,8 +20,10 @@ export const contextHeaderHTML = ( editor, documents ) =>
 const dependencyAtomHTML = ( editor, doc ) => {
   const nestedHeaderHTML = contextHeaderHTML( editor, doc.context_documents || [] )
   const body = doc.content
-    ? ( new DOMParser().parseFromString( doc.content, "text/html" )
-        .querySelector( "#document" )?.innerHTML ?? doc.content )
+    // Top-level #document only, like LurchDocument.documentParts(): the
+    // content's own header embeds its context documents' #document parts.
+    ? ( Array.from( new DOMParser().parseFromString( doc.content, "text/html" ).body.children )
+        .find( element => element.id === "document" )?.innerHTML ?? doc.content )
     : ""
   const nestedDocumentHTML =
     `<div id="metadata" style="display: none;">`

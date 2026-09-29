@@ -89,7 +89,16 @@ export default class extends Controller {
     // loading, and until then renders math as "undefined" (and can't parse
     // it for validation). So wait until notation.js's converter works, then
     // one more polling interval for expressions.js's (beginner mode only).
-    while ( represent( "x", "lurchNotation" ) === undefined ) await sleep( 50 )
+    // (It can also throw for a moment: MathLive's MathfieldElement appears
+    // before its compute engine, which the converter uses, has loaded.)
+    const converterWorks = () => {
+      try {
+        return represent( "x", "lurchNotation" ) !== undefined
+      } catch {
+        return false
+      }
+    }
+    while ( !converterWorks() ) await sleep( 50 )
     await sleep( 100 )
 
     this.renderMath( doc, Atom )

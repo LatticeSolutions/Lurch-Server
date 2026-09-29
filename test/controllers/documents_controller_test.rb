@@ -61,6 +61,21 @@ class DocumentsControllerTest < ActionDispatch::IntegrationTest
     end
   end
 
+  test "show renders the document's own body, not a context document's embedded in its header" do
+    @document.update!(content: <<~HTML)
+      <div id="metadata" style="display: none;"><div data-category="main" data-key="header" data-value-type="html"><div class="lurch-atom" data-metadata_type="&quot;dependency&quot;"><div data-key="content"><div id="metadata"></div><div id="document"><p>CONTEXT-BODY</p></div></div></div></div></div>
+      <div id="document"><div id="context" class="lurch-atom"><p>PANEL</p></div><p>OWN-BODY</p></div>
+    HTML
+
+    get document_url(@document)
+    assert_select "iframe[srcdoc]" do |(iframe)|
+      srcdoc = iframe["srcdoc"]
+      assert_includes srcdoc, "OWN-BODY"
+      assert_not_includes srcdoc, "CONTEXT-BODY"
+      assert_not_includes srcdoc, "PANEL"
+    end
+  end
+
   test "show links to the document's context documents" do
     context_doc = documents(:published_one)
     @document.update!(context_document_ids: [ context_doc.id ])

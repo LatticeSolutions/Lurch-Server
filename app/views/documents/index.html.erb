@@ -1,9 +1,16 @@
-<% content_for :title, "Documents" %>
+<% heading = action_name == "all_documents" ? "All documents" : "My documents" %>
+<% content_for :title, heading %>
 
   <div class="flex justify-between items-center">
-    <h1 class="font-bold text-4xl">Documents</h1>
+    <h1 class="font-bold text-4xl"><%= heading %></h1>
     <%= link_to "New document", new_document_path, class: "rounded-md px-3.5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white block font-medium" %>
   </div>
+
+  <nav class="flex gap-4 mt-2 text-sm font-medium" aria-label="Document filters">
+    <% [ [ "My documents", documents_path ], [ "All documents", all_documents_path ] ].each do |label, path| %>
+      <%= link_to label, path, class: current_page?(path) ? "text-gray-900 underline" : "text-sky-600 hover:underline" %>
+    <% end %>
+  </nav>
 
   <div id="documents" class="min-w-full divide-y divide-gray-200 space-y-5 my-4">
     <% if @documents.any? %>

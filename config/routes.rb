@@ -20,6 +20,7 @@ Rails.application.routes.draw do
       post :duplicate
     end
     get "public", on: :collection, action: :public_documents
+    get "all", on: :collection, action: :all_documents
   end
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
 

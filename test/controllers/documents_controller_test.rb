@@ -11,6 +11,38 @@ class DocumentsControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
   end
 
+  test "index lists only the signed-in user's own documents" do
+    others_published = Document.create!(title: "Others", content: "x", user: users(:other), visibility: :published)
+    get documents_url, as: :json
+    ids = response.parsed_body.map { |d| d["id"] }
+    assert_includes ids, @document.id
+    assert_not_includes ids, others_published.id
+  end
+
+  test "all_documents lists own and published documents, but not others' restricted ones" do
+    others_published = Document.create!(title: "Others", content: "x", user: users(:other), visibility: :published)
+    others_restricted = Document.create!(title: "Secret", content: "x", user: users(:other))
+    get all_documents_url, as: :json
+    assert_response :success
+    ids = response.parsed_body.map { |d| d["id"] }
+    assert_includes ids, @document.id
+    assert_includes ids, others_published.id
+    assert_not_includes ids, others_restricted.id
+  end
+
+  test "an admin's index lists only their own documents, but all_documents lists everything" do
+    sign_in users(:admin)
+    get documents_url, as: :json
+    assert_not_includes response.parsed_body.map { |d| d["id"] }, @document.id
+    get all_documents_url, as: :json
+    assert_includes response.parsed_body.map { |d| d["id"] }, @document.id
+  end
+
+  test "should get all_documents" do
+    get all_documents_url
+    assert_response :success
+  end
+
   test "should get new" do
     get new_document_url
     assert_response :success
@@ -145,6 +177,8 @@ class DocumentsControllerTest < ActionDispatch::IntegrationTest
   test "redirects unauthenticated requests to sign in" do
     sign_out users(:regular)
     get documents_url
+    assert_redirected_to new_user_session_url
+    get all_documents_url
     assert_redirected_to new_user_session_url
   end
 

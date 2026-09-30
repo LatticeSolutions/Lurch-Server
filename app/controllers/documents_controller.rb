@@ -1,12 +1,19 @@
 class DocumentsController < ApplicationController
   before_action :authenticate_user!
 
-  load_resource except: :public_documents
+  load_resource except: %i[ public_documents all_documents ]
   before_action :assign_current_user, only: %i[ new create ]
-  authorize_resource except: :public_documents
+  authorize_resource except: %i[ public_documents all_documents ]
 
   # GET /documents or /documents.json
   def index
+    @documents = @documents.where(user: current_user)
+  end
+
+  # GET /documents/all or /documents/all.json
+  def all_documents
+    @documents = Document.accessible_by(current_ability, :read)
+    render :index
   end
 
   # GET /documents/1 or /documents/1.json

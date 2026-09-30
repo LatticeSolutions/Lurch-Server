@@ -37,4 +37,23 @@
         title: @document.title,
         class: "w-full bg-white rounded border-0 mb-4",
         data: { document_view_target: "frame" } %>
+
+  <%# Read-only source and output of a clicked math atom, like the editor's
+      "View math" dialog; filled in by the document-view controller. %>
+  <dialog data-document-view-target="mathDialog"
+          data-action="click->document-view#closeMathDialogOnBackdrop"
+          class="m-auto w-full max-w-xl rounded-lg p-0 shadow-xl backdrop:bg-black/40">
+    <div class="p-4">
+      <h2 data-document-view-target="mathDialogTitle" class="mb-3 text-lg font-thin"></h2>
+      <textarea data-document-view-target="mathSource" readonly rows="1"
+                aria-label="Source"
+                class="w-full resize-none rounded border border-gray-300 bg-gray-50 p-2 font-mono text-sm"></textarea>
+      <div data-document-view-target="mathPreview" class="mt-2 text-xl"></div>
+      <div class="mt-4 flex items-center justify-between text-sm text-gray-500">
+        <span><kbd class="rounded border border-gray-300 px-1">Esc</kbd> close</span>
+        <button type="button" data-action="document-view#closeMathDialog"
+                class="cursor-pointer text-sky-600 hover:underline">Close</button>
+      </div>
+    </div>
+  </dialog>
 <% end %>

@@ -2,7 +2,8 @@ class Ability
   include CanCan::Ability
 
   def initialize(user)
-    user ||= User.new
+    # Guests may only view published documents (e.g. via a share link).
+    return can(:read, Document, visibility: "published") if user.nil?
 
     if user.admin?
       can :manage, :all

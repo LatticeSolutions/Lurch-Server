@@ -182,6 +182,43 @@ class DocumentsControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to new_user_session_url
   end
 
+  test "an anonymous user can view a published document, without edit or duplicate links" do
+    sign_out users(:regular)
+    get document_url(documents(:published_one))
+    assert_response :success
+    assert_select "a", text: "Edit", count: 0
+    assert_select "button", text: "Duplicate", count: 0
+  end
+
+  test "an anonymous user can fetch a published document as JSON" do
+    sign_out users(:regular)
+    get document_url(documents(:published_one), format: :json)
+    assert_response :success
+    assert_equal "PublicDoc", response.parsed_body["title"]
+  end
+
+  test "an anonymous user is sent to sign in for a private document, then returned to it" do
+    sign_out users(:regular)
+    get document_url(@document)
+    assert_redirected_to new_user_session_url
+
+    post user_session_url, params: { user: { email: "user@example.com", password: "password123" } }
+    assert_redirected_to document_url(@document)
+  end
+
+  test "an anonymous user cannot edit, create or duplicate documents" do
+    sign_out users(:regular)
+    published = documents(:published_one)
+    get edit_document_url(published)
+    assert_redirected_to new_user_session_url
+    get new_document_url
+    assert_redirected_to new_user_session_url
+    assert_no_difference("Document.count") do
+      post duplicate_document_url(published)
+    end
+    assert_redirected_to new_user_session_url
+  end
+
   test "a non-owner can view a published document" do
     published = documents(:published_one)
     sign_in users(:other)

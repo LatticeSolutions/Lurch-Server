@@ -1,5 +1,5 @@
 class DocumentsController < ApplicationController
-  before_action :authenticate_user!
+  before_action :authenticate_user!, except: :show
 
   load_resource except: %i[ public_documents all_documents ]
   before_action :assign_current_user, only: %i[ new create ]

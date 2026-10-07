@@ -51,7 +51,7 @@ export default class extends Controller {
       autoSaveEnabled: false,
       // editor.js unconditionally appends to menuData.help.items, which is
       // only initialized if at least one help page is supplied.
-      helpPages: [ { title: "Getting Started", url: "https://about.lurch.plus/getting-started" } ],
+      helpPages: [ { title: "Getting Started", url: "https://lurch.plus/getting-started" } ],
       // Always show the "meaning" (boxed) view of environments, rather than
       // the vendor default "minimal" presentation view.
       appDefaults: { "default shell style": "boxed" },

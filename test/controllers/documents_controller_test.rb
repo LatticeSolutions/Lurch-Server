@@ -219,6 +219,48 @@ class DocumentsControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to new_user_session_url
   end
 
+  test "an anonymous user can explore a published document, with a not-saved banner" do
+    sign_out users(:regular)
+    get explore_document_url(documents(:published_one))
+    assert_response :success
+    assert_select "[data-controller=document-editor][data-document-editor-explore-value=true]"
+    assert_select "[role=alert]", text: /will not be saved/ do
+      assert_select "a[href=?]", new_user_session_path
+    end
+  end
+
+  test "an anonymous user is sent to sign in to explore a private document" do
+    sign_out users(:regular)
+    get explore_document_url(@document)
+    assert_redirected_to new_user_session_url
+  end
+
+  test "a non-owner can explore a published document, but not a private one" do
+    sign_in users(:other)
+    get explore_document_url(documents(:published_one))
+    assert_response :success
+    assert_select "[role=alert] button", text: "Duplicate"
+
+    get explore_document_url(@document)
+    assert_redirected_to root_url
+  end
+
+  test "edit is not in explore mode and has no not-saved banner" do
+    get edit_document_url(@document)
+    assert_select "[data-controller=document-editor][data-document-editor-explore-value=false]"
+    assert_select "[role=alert]", count: 0
+  end
+
+  test "show links to explore only for users who cannot edit" do
+    published = documents(:published_one)
+    get document_url(published)
+    assert_select "a", text: "Explore", count: 0
+
+    sign_out users(:regular)
+    get document_url(published)
+    assert_select "a[href=?]", explore_document_path(published), text: "Explore"
+  end
+
   test "a non-owner can view a published document" do
     published = documents(:published_one)
     sign_in users(:other)

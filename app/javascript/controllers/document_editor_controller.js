@@ -9,6 +9,8 @@ import { contextHeaderHTML } from "../lurch_context"
 // that sets the global `Lurch` (see bin/vendor-lurch.mjs) -- into this
 // controller's own element, and wires it to this app's Rails endpoints for
 // save/duplicate/context. See app/views/documents/edit.html.erb.
+// In "explore" mode (app/views/documents/explore.html.erb) nothing is ever
+// sent to the server: no autosave, and no menu items that save or modify.
 /* global Lurch */
 export default class extends Controller {
   static targets = [ "loading" ]
@@ -17,7 +19,8 @@ export default class extends Controller {
     id: String,
     title: String,
     content: String,
-    context: Array
+    context: Array,
+    explore: Boolean
   }
 
   connect() {
@@ -43,7 +46,8 @@ export default class extends Controller {
   startEditor() {
     Lurch.createApp( this.element, {
       appRoot: "/lurchmath",
-      preventLeaving: false,
+      // Warn before leaving only when exploring, since nothing is saved.
+      preventLeaving: this.exploreValue,
       autoSaveEnabled: false,
       // editor.js unconditionally appends to menuData.help.items, which is
       // only initialized if at least one help page is supplied.
@@ -67,7 +71,10 @@ export default class extends Controller {
       editor: {
         plugins: "lists link contextmenu fullscreen"
       },
-      menuData: {
+      menuData: this.exploreValue ? {
+        file: { title: "File", items: "sharelink | print" },
+        document: { title: "Document", items: "viewcontext | docsettings" }
+      } : {
         file: {
           title: "File",
           items: "newlurchdocument opendocument savedocument duplicatedocument sharelink | renamedocument | print | closedocument"
@@ -90,7 +97,10 @@ export default class extends Controller {
       this.loadingTarget.remove()
       new LurchDocument( editor ).setDocument( this.contentValue )
       this.applyContext( this.contextValue )
-      this.startAutosave()
+      // When exploring, refreshing the header above isn't a user change, so
+      // it shouldn't trigger the leave-page warning (see preventLeaving).
+      if ( this.exploreValue ) editor.setDirty( false )
+      else this.startAutosave()
     } )
 
     this.registerMenuItems()
@@ -163,6 +173,12 @@ export default class extends Controller {
   registerMenuItems() {
     const editor = this.editor
 
+    editor.ui.registry.addMenuItem( "sharelink", {
+      text: "Share link", icon: "link", tooltip: "Copy a link to this document's view page",
+      onAction: () => this.copyShareLink()
+    } )
+    if ( this.exploreValue ) return
+
     editor.ui.registry.addMenuItem( "newlurchdocument", {
       text: "New", icon: "new-document", tooltip: "New document", shortcut: "Alt+N",
       onAction: () => this.ensureWorkIsSaved().then( ok => {
@@ -187,10 +203,6 @@ export default class extends Controller {
     editor.ui.registry.addMenuItem( "duplicatedocument", {
       text: "Duplicate", icon: "duplicate", tooltip: "Save a copy as a new document",
       onAction: () => this.duplicateDocument()
-    } )
-    editor.ui.registry.addMenuItem( "sharelink", {
-      text: "Share link", icon: "link", tooltip: "Copy a link to this document's view page",
-      onAction: () => this.copyShareLink()
     } )
     editor.ui.registry.addMenuItem( "closedocument", {
       text: "Save and Close", icon: "close", tooltip: "Save this document and return to the homepage",

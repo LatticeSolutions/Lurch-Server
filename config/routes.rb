@@ -18,6 +18,7 @@ Rails.application.routes.draw do
       patch :unpublish
       patch :context
       post :duplicate
+      get :explore
     end
     get "public", on: :collection, action: :public_documents
     get "all", on: :collection, action: :all_documents

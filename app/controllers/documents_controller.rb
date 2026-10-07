@@ -1,5 +1,5 @@
 class DocumentsController < ApplicationController
-  before_action :authenticate_user!, except: :show
+  before_action :authenticate_user!, except: %i[ show explore all_documents ]
 
   load_resource except: %i[ public_documents all_documents ]
   before_action :assign_current_user, only: %i[ new create ]
@@ -22,6 +22,12 @@ class DocumentsController < ApplicationController
 
   # GET /documents/1/edit
   def edit
+  end
+
+  # GET /documents/1/explore
+  # The editor, but nothing is saved: lets anyone (including guests) play
+  # with a published document in the browser.
+  def explore
   end
 
   # GET /documents/public or /documents/public.json

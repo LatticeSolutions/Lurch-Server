@@ -1,0 +1,20 @@
+<% content_for :title, "Explore: #{@document.title}" %>
+
+<h1 class="my-5 text-xl font-thin">
+  Exploring: <%= @document.title %>
+</h1>
+
+<div role="alert" class="bg-amber-50 text-amber-800 px-4 py-2 text-sm mb-2">
+  <strong>Changes you make here will not be saved.</strong>
+  Feel free to experiment with this document in your browser.
+  <% if !user_signed_in? %>
+    To create and save your own documents,
+    <%= link_to "sign in", new_user_session_path, class: "underline" %> or
+    <%= link_to "sign up", new_user_registration_path, class: "underline" %>.
+  <% elsif can? :duplicate, @document %>
+    To keep your changes, first make your own copy:
+    <%= button_to "Duplicate", duplicate_document_path(@document), method: :post, class: "underline cursor-pointer", form_class: "inline-block", form: { data: { turbo: false } } %>
+  <% end %>
+</div>
+
+<%= render "editor", explore: true %>

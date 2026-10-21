@@ -153,6 +153,38 @@ class DocumentsControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to document_url(@document)
   end
 
+  test "an autosave with the current updated_at saves and returns the new full-precision updated_at" do
+    patch document_url(@document, format: :json), as: :json,
+      params: { document: { content: "new" }, expected_updated_at: @document.updated_at.iso8601(6) }
+    assert_response :success
+    assert_equal "new", @document.reload.content
+    assert_equal @document.updated_at.iso8601(6), response.parsed_body["updated_at"]
+  end
+
+  test "an autosave with a stale updated_at is rejected without saving" do
+    stale = @document.updated_at.iso8601(6)
+    @document.update!(content: "saved elsewhere")
+    patch document_url(@document, format: :json), as: :json,
+      params: { document: { content: "new" }, expected_updated_at: stale }
+    assert_response :conflict
+    assert_equal "saved elsewhere", @document.reload.content
+    assert_equal @document.updated_at.iso8601(6), response.parsed_body["updated_at"]
+  end
+
+  test "an autosave with an unparseable updated_at is rejected" do
+    patch document_url(@document, format: :json), as: :json,
+      params: { document: { content: "new" }, expected_updated_at: "garbage" }
+    assert_response :conflict
+    assert_not_equal "new", @document.reload.content
+  end
+
+  test "a manual save without an expected updated_at overwrites regardless" do
+    @document.update!(content: "saved elsewhere")
+    patch document_url(@document, format: :json), as: :json, params: { document: { content: "new" } }
+    assert_response :success
+    assert_equal "new", @document.reload.content
+  end
+
   test "should destroy document" do
     assert_difference("Document.count", -1) do
       delete document_url(@document)

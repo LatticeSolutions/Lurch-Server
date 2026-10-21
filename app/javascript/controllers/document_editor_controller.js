@@ -20,6 +20,7 @@ export default class extends Controller {
     title: String,
     content: String,
     context: Array,
+    updatedAt: String,
     explore: Boolean
   }
 
@@ -111,14 +112,26 @@ export default class extends Controller {
   // success; after 3 consecutive failures, warns the user once that
   // autosave isn't working (the counter then resets on the next success, so
   // a later failing streak warns again).
+  // If the server reports the document was saved elsewhere since this editor
+  // last saw it (see saveDocument()), autosave pauses with a warning instead,
+  // until a manual save deliberately overwrites the other copy.
   startAutosave() {
     let autosaveFailures = 0
+    this.autosavePaused = false
     this.autosaveTimer = setInterval( () => {
-      if ( !this.editor.isDirty() ) return
-      this.saveDocument().then( () => {
+      if ( this.autosavePaused || !this.editor.isDirty() ) return
+      this.saveDocument( { autosave: true } ).then( () => {
         autosaveFailures = 0
       } ).catch( error => {
         console.error( error )
+        if ( error.conflict ) {
+          this.autosavePaused = true
+          Dialog.notify( this.editor, "warning",
+            "This document was changed somewhere else (perhaps in another tab or on another device) "
+            + "since you last saved here, so autosave is paused. Saving manually will overwrite "
+            + "those changes -- use caution." )
+          return
+        }
         autosaveFailures++
         if ( autosaveFailures === 3 )
           Dialog.notify( this.editor, "error",
@@ -142,9 +155,15 @@ export default class extends Controller {
     editor.getBody().querySelector( "#context" )?.remove()
   }
 
-  saveDocument() {
+  // An autosave sends the updated_at this editor last saw, and the server
+  // rejects it (409, thrown here as an error with `conflict` set) if the
+  // document has been saved elsewhere since. A manual save omits it, and so
+  // always overwrites; once it succeeds, autosave resumes.
+  saveDocument( { autosave = false } = {} ) {
     const editor = this.editor
     const content = new LurchDocument( editor ).getDocument( "" )
+    const body = { document: { content } }
+    if ( autosave ) body.expected_updated_at = this.updatedAtValue
     return fetch( `/documents/${this.idValue}.json`, {
       method: "PATCH",
       headers: {
@@ -152,11 +171,27 @@ export default class extends Controller {
         "Accept": "application/json",
         "X-CSRF-Token": this.csrfToken()
       },
-      body: JSON.stringify( { document: { content } } )
+      body: JSON.stringify( body )
     } ).then( response => {
+      if ( response.status === 409 )
+        throw Object.assign( new Error( "Document was saved elsewhere" ), { conflict: true } )
       if ( !response.ok ) throw new Error( response.statusText )
+      return response.json()
+    } ).then( json => {
+      this.adoptUpdatedAt( json.updated_at )
+      if ( !autosave ) this.autosavePaused = false
       editor.setDirty( false )
     } )
+  }
+
+  // Record the server's updated_at after one of this editor's own changes, so
+  // the next autosave doesn't mistake it for a save made elsewhere. Ignores
+  // timestamps older than the one already held, in case responses to
+  // overlapping requests arrive out of order.
+  adoptUpdatedAt( updatedAt ) {
+    if ( !updatedAt ) return
+    if ( !this.updatedAtValue || new Date( updatedAt ) >= new Date( this.updatedAtValue ) )
+      this.updatedAtValue = updatedAt
   }
 
   ensureWorkIsSaved() {
@@ -244,6 +279,9 @@ export default class extends Controller {
         body: JSON.stringify( { document: { title } } )
       } ).then( response => {
         if ( !response.ok ) throw new Error( response.statusText )
+        return response.json()
+      } ).then( json => {
+        this.adoptUpdatedAt( json.updated_at )
         this.titleValue = title
         document.title = `Edit: ${title}`
         const heading = document.getElementById( "document-title" )
@@ -333,6 +371,7 @@ export default class extends Controller {
           return response.json()
         } ).then( json => {
           this.currentContextIds = selectedIds
+          this.adoptUpdatedAt( json.updated_at )
           // Refresh the live header without requiring a page reload, using
           // the fully-resolved (recursively nested) tree the server just
           // returned -- no follow-up per-document fetches needed.

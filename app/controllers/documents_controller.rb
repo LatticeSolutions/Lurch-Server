@@ -54,7 +54,8 @@ class DocumentsController < ApplicationController
   def context
     if @document.update(context_params)
       render json: { context_document_ids: @document.context_document_ids,
-                     context_documents: @document.context_documents_tree }
+                     context_documents: @document.context_documents_tree,
+                     updated_at: @document.updated_at.iso8601(6) }
     else
       render json: @document.errors, status: :unprocessable_content
     end
@@ -93,14 +94,22 @@ class DocumentsController < ApplicationController
   end
 
   # PATCH/PUT /documents/1 or /documents/1.json
+  # Lock the row so that two concurrent auto-saves can't both pass the
+  # staleness check below before either one writes.
   def update
-    respond_to do |format|
-      if @document.update(document_params)
-        format.html { redirect_to @document, notice: "Document was successfully updated.", status: :see_other }
-        format.json { render :show, status: :ok, location: @document }
+    @document.with_lock do
+      if stale_autosave?
+        render json: { error: "conflict", updated_at: @document.updated_at.iso8601(6) }, status: :conflict
       else
-        format.html { render :edit, status: :unprocessable_content }
-        format.json { render json: @document.errors, status: :unprocessable_content }
+        respond_to do |format|
+          if @document.update(document_params)
+            format.html { redirect_to @document, notice: "Document was successfully updated.", status: :see_other }
+            format.json { render :show, status: :ok, location: @document }
+          else
+            format.html { render :edit, status: :unprocessable_content }
+            format.json { render json: @document.errors, status: :unprocessable_content }
+          end
+        end
       end
     end
   end
@@ -124,6 +133,16 @@ class DocumentsController < ApplicationController
     # excluded so ownership cannot be set/overridden via the form.
     def document_params
       params.expect(document: [ :title, :content ])
+    end
+
+    # Auto-saves send the updated_at the editor last saw (expected_updated_at);
+    # if it no longer matches, the document was saved elsewhere since, so the
+    # auto-save must not overwrite it. Manual saves omit it to overwrite.
+    def stale_autosave?
+      return false unless params.key?(:expected_updated_at)
+      Time.zone.iso8601(params[:expected_updated_at].to_s) != @document.updated_at
+    rescue ArgumentError
+      true
     end
 
     def context_params

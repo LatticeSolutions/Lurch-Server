@@ -9,6 +9,7 @@ class DocumentsControllerTest < ActionDispatch::IntegrationTest
   test "should get index" do
     get documents_url
     assert_response :success
+    assert_select "a[href=?]", new_document_path, text: "New document"
   end
 
   test "index lists only the signed-in user's own documents" do
@@ -219,6 +220,13 @@ class DocumentsControllerTest < ActionDispatch::IntegrationTest
     ids = response.parsed_body.map { |d| d["id"] }
     assert_includes ids, documents(:published_one).id
     assert_not_includes ids, @document.id
+  end
+
+  test "an anonymous user's all_documents page has no New document button" do
+    sign_out users(:regular)
+    get all_documents_url
+    assert_response :success
+    assert_select "a[href=?]", new_document_path, count: 0
   end
 
   test "an anonymous user can view a published document, without edit or duplicate links" do

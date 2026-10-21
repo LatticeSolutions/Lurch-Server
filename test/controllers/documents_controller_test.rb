@@ -210,8 +210,15 @@ class DocumentsControllerTest < ActionDispatch::IntegrationTest
     sign_out users(:regular)
     get documents_url
     assert_redirected_to new_user_session_url
-    get all_documents_url
-    assert_redirected_to new_user_session_url
+  end
+
+  test "an anonymous user's all_documents lists only published documents" do
+    sign_out users(:regular)
+    get all_documents_url, as: :json
+    assert_response :success
+    ids = response.parsed_body.map { |d| d["id"] }
+    assert_includes ids, documents(:published_one).id
+    assert_not_includes ids, @document.id
   end
 
   test "an anonymous user can view a published document, without edit or duplicate links" do

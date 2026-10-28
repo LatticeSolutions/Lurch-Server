@@ -28,6 +28,15 @@ export default class extends Controller {
     this.currentContextIds = this.contextValue.map( doc => doc.id )
     this.autosaveTimer = null
 
+    // Turbo Drive link visits don't fire "beforeunload" (see preventLeaving
+    // in startEditor()), so confirm those separately.
+    this.confirmTurboVisit = event => {
+      if ( this.editor?.isDirty()
+        && !confirm( "You have unsaved changes. Leave anyway?" ) )
+        event.preventDefault()
+    }
+    document.addEventListener( "turbo:before-visit", this.confirmTurboVisit )
+
     // `Lurch` is set as a side effect of the sibling
     // <script type="module" src="/lurchmath/editor.js"> tag. Module scripts
     // execute in document order but this controller can still connect
@@ -42,13 +51,15 @@ export default class extends Controller {
 
   disconnect() {
     if ( this.autosaveTimer ) clearInterval( this.autosaveTimer )
+    document.removeEventListener( "turbo:before-visit", this.confirmTurboVisit )
   }
 
   startEditor() {
     Lurch.createApp( this.element, {
       appRoot: "/lurchmath",
-      // Warn before leaving only when exploring, since nothing is saved.
-      preventLeaving: this.exploreValue,
+      // Warn before closing or leaving the page while there are unsaved
+      // changes (the vendor handler checks editor.isDirty()).
+      preventLeaving: true,
       autoSaveEnabled: false,
       // editor.js unconditionally appends to menuData.help.items, which is
       // only initialized if at least one help page is supplied.
@@ -137,7 +148,7 @@ export default class extends Controller {
           Dialog.notify( this.editor, "error",
             "Autosave is not working. Your changes are not being saved -- please save manually." )
       } )
-    }, 10000 )
+    }, 3000 )
   }
 
   // Rebuild the document header's Dependency atoms from a list of context
@@ -194,11 +205,16 @@ export default class extends Controller {
       this.updatedAtValue = updatedAt
   }
 
+  // Once the user agrees to discard changes, clear the dirty flag so the
+  // leave-page warning (see preventLeaving) doesn't ask a second time.
   ensureWorkIsSaved() {
     const editor = this.editor
-    return editor.isDirty()
-      ? Dialog.areYouSure( editor, "You will lose any unsaved work.  Continue anyway?" )
-      : Promise.resolve( true )
+    if ( !editor.isDirty() ) return Promise.resolve( true )
+    return Dialog.areYouSure( editor, "You will lose any unsaved work.  Continue anyway?" )
+      .then( ok => {
+        if ( ok ) editor.setDirty( false )
+        return ok
+      } )
   }
 
   csrfToken() {
